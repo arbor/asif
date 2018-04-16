@@ -1,0 +1,82 @@
+name:                asif
+version:             1.0.0
+github:              "packetloop/asif"
+license:             MIT
+category:            Services
+author:              Tyler Durden
+maintainer:          tyler.durden@arbor.net
+copyright:           Arbor Networks
+
+extra-source-files:
+- README.md
+- ChangeLog.md
+
+description:         Please see the README on Github at <https://github.com/packetloop/asif#readme>
+
+default-extensions:
+- BangPatterns
+- FlexibleContexts
+- FlexibleInstances
+- GeneralizedNewtypeDeriving
+- MultiParamTypeClasses
+- OverloadedStrings
+- TupleSections
+
+dependencies:
+- base >= 4.7 && < 5
+- amazonka
+- amazonka-core
+- amazonka-s3
+- binary
+- bytestring
+- conduit-extra
+- containers
+- directory
+- either
+- errors
+- exceptions
+- http-types
+- hw-bits
+- hw-fingertree-strict
+- lazy-csv
+- lens
+- mtl
+- resourcet
+- text
+- transformers
+- unordered-containers
+- vector
+- zlib
+
+library:
+  source-dirs: src
+  exposed-modules:
+    - SegmentedFormat
+
+executables:
+  asif:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -O2
+    - -msse4.2
+    dependencies:
+    - asif
+    - optparse-applicative
+
+tests:
+  asif-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - asif
+    - arbor-ip
+    - hspec
+    - hedgehog
+    - hw-hspec-hedgehog

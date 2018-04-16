@@ -1,0 +1,13 @@
+resolver: lts-10.10
+
+packages:
+- .
+- location:
+    git: git@github.com:packetloop/arbor-ip.git
+    commit: 9cea5e3c5e3eeaf767f97749b127a7495604f845
+  extra-dep: true
+
+extra-deps:
+- hedgehog-0.5
+- hw-fingertree-strict-0.1.0.3
+- lazy-csv-0.5.1
