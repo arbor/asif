@@ -24,11 +24,10 @@ default-extensions:
 
 dependencies:
 - base >= 4.7 && < 5
-- amazonka
-- amazonka-core
-- amazonka-s3
 - binary
 - bytestring
+- conduit
+- conduit-combinators
 - conduit-extra
 - containers
 - directory
@@ -52,6 +51,8 @@ library:
   source-dirs: src
   exposed-modules:
     - SegmentedFormat
+    - App.IO
+    - App.ByteString.Lazy.Builder
 
 executables:
   asif:
