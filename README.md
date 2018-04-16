@@ -1,5 +1,5 @@
 # Arbor Safe Intelligence Format (asif)
-[![CircleCI](https://circleci.com/gh/packetloop/asif.svg?style=svg&circle-token=3e7833f7d5496cc5a1719e30150eb6b092ec4625)]
+![CircleCI](https://circleci.com/gh/packetloop/asif.svg?style=svg&circle-token=1420752ec3bc7c068b3a35925ad5f9c63e3d3773)
 
 Library for creating and querying segmented feeds.
 
