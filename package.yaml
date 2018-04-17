@@ -24,6 +24,7 @@ default-extensions:
 
 dependencies:
 - base >= 4.7 && < 5
+- attoparsec
 - binary
 - bytestring
 - conduit
@@ -53,19 +54,6 @@ library:
     - SegmentedFormat
     - App.IO
     - App.ByteString.Lazy.Builder
-
-executables:
-  asif:
-    main: Main.hs
-    source-dirs: app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -O2
-    - -msse4.2
-    dependencies:
-    - asif
-    - optparse-applicative
 
 tests:
   asif-test:
