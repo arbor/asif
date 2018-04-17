@@ -29,24 +29,11 @@ dependencies:
 - bytestring
 - conduit
 - conduit-combinators
-- conduit-extra
 - containers
-- directory
 - either
-- errors
 - exceptions
-- http-types
-- hw-bits
-- hw-fingertree-strict
-- lazy-csv
 - lens
-- mtl
-- resourcet
-- text
-- transformers
-- unordered-containers
 - vector
-- zlib
 
 library:
   source-dirs: src
