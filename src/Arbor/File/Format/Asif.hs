@@ -15,6 +15,7 @@ module Arbor.File.Format.Asif
   , segmentIdentifiers
   ) where
 
+import Arbor.File.Format.Asif.ByteString.Builder
 import Control.Lens
 import Control.Monad
 import Data.Binary.Get
@@ -41,13 +42,10 @@ type Code = (Char, Char)
 
 getMagic :: AP.Parser BS.ByteString -> Get ()
 getMagic magicParser = do
-  a <- getLazyByteString 8
+  a <- getLazyByteString magicLength
   case AP.parseOnly magicParser (LBS.toStrict a) of
     Right _    -> return ()
     Left error -> fail $ "wrong magic: \"" <> LC8.unpack a <> "\", expected: " <> error
-
-getVersion :: Get Word64
-getVersion = getWord64le
 
 getSegmentLength :: Get Int
 getSegmentLength = fromIntegral <$> getInt64le
@@ -65,7 +63,6 @@ getSegmentPositions = do
 getHeader :: AP.Parser BS.ByteString -> Get [(Int, Int)]
 getHeader magicParser = do
   getMagic magicParser
-  getVersion
   getSegmentPositions
 
 extractSegments :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [LBS.ByteString]
