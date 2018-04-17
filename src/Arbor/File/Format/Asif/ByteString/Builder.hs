@@ -51,7 +51,7 @@ versionLength :: Int64
 versionLength = fromIntegral $ finiteBitSize (0 :: Word64) `quot` 8
 
 headerLen :: Int64 -> Int64
-headerLen n = w64 + magicLength + versionLength + n * w64
+headerLen n = w64 + magicLength + n * w64
   where w64 :: Int64
         w64 = fromIntegral $ finiteBitSize (0 :: Word64) `quot` 8
 
