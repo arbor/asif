@@ -1,4 +1,4 @@
-module App.ByteString.Lazy.Builder
+module Arbor.File.Format.Asif.ByteString.Builder
   ( magicString
   , withSize
   , segmentsC
@@ -13,7 +13,7 @@ import Data.Int
 import Data.Monoid
 import Data.Word
 
-import qualified App.IO                     as IO
+import qualified Arbor.File.Format.Asif.IO  as IO
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Builder    as B
 import qualified Data.ByteString.Lazy       as LBS

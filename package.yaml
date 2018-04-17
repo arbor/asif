@@ -51,9 +51,9 @@ dependencies:
 library:
   source-dirs: src
   exposed-modules:
-    - SegmentedFormat
-    - App.IO
-    - App.ByteString.Lazy.Builder
+    - Arbor.File.Format.Asif
+    - Arbor.File.Format.Asif.IO
+    - Arbor.File.Format.Asif.ByteString.Builder
 
 tests:
   asif-test:

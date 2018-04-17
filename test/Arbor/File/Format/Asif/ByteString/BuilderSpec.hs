@@ -1,24 +1,24 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 
-module App.ByteString.Lazy.BuilderSpec
+module Arbor.File.Format.Asif.ByteString.BuilderSpec
   ( spec
   ) where
 
-import App.ByteString.Lazy.Builder
+import Arbor.File.Format.Asif.ByteString.Builder
 import Conduit
 import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
-import System.IO                   (openTempFile)
+import System.IO                                 (openTempFile)
 import Test.Hspec
 
-import qualified App.ByteString.Lazy.Builder as LB
-import qualified Data.Attoparsec.ByteString  as AP
-import qualified Data.ByteString             as BS
-import qualified Data.ByteString.Lazy        as LBS
-import qualified Hedgehog.Gen                as G
-import qualified Hedgehog.Range              as R
-import qualified SegmentedFormat             as C
-import qualified System.IO                   as IO
+import qualified Arbor.File.Format.Asif                    as C
+import qualified Arbor.File.Format.Asif.ByteString.Builder as LB
+import qualified Data.Attoparsec.ByteString                as AP
+import qualified Data.ByteString                           as BS
+import qualified Data.ByteString.Lazy                      as LBS
+import qualified Hedgehog.Gen                              as G
+import qualified Hedgehog.Range                            as R
+import qualified System.IO                                 as IO
 
 {-# ANN module ("HLint: ignore Redundant do"  :: String) #-}
 
