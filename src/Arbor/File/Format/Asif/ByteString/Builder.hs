@@ -2,6 +2,8 @@ module Arbor.File.Format.Asif.ByteString.Builder
   ( magicString
   , withSize
   , segmentsC
+  , makeMagic
+  , magicLength
   ) where
 
 import Conduit
@@ -21,50 +23,56 @@ import qualified Data.ByteString.Lazy.Char8 as LC8
 import qualified Data.Conduit.List          as CL
 import qualified GHC.IO.Handle              as IO
 
-magic :: Char -> Builder
-magic c = B.lazyByteString (magicString c)
+makeMagic :: String -> Builder
+makeMagic c = B.lazyByteString (magicString c)
+
+magicPrefix :: LBS.ByteString
+magicPrefix = "seg:"
 
 -- magic file identifier for segmented gan feeds.
 -- 7 characters. the 8th is meant to be filled in based on feed.
-magicString :: Char -> LC8.ByteString
-magicString c = LC8.pack "seg:gan" <> LC8.pack [c]
+magicString :: String -> LC8.ByteString
+magicString s = if LBS.length truncatedMagic < LBS.length rawMagic
+  then truncatedMagic
+  else error $ "Magic length of " <> show (LC8.unpack truncatedMagic) <> " cannot be greater than " <> show magicLength
+  where rawMagic        = LC8.pack "seg:" <> LC8.pack s <> LBS.replicate 12 0
+        truncatedMagic  = LBS.take magicLength rawMagic
 
-magicLength' :: Int64
-magicLength' = 8
+magicLength :: Int64
+magicLength = 16
 
-padding64' :: Int64 -> Int64
-padding64' s = (8 - s) `mod` 8
+padding64 :: Int64 -> Int64
+padding64 s = (8 - s) `mod` 8
 
 withSize :: LBS.ByteString -> (Int64, LBS.ByteString)
 withSize bs = (LBS.length bs, bs)
 
-versionLength' :: Int64
-versionLength' = fromIntegral $ finiteBitSize (0 :: Word64) `quot` 8
+versionLength :: Int64
+versionLength = fromIntegral $ finiteBitSize (0 :: Word64) `quot` 8
 
-headerLen' :: Int64 -> Int64
-headerLen' n = w64 + magicLength' + versionLength' + n * w64
+headerLen :: Int64 -> Int64
+headerLen n = w64 + magicLength + versionLength + n * w64
   where w64 :: Int64
         w64 = fromIntegral $ finiteBitSize (0 :: Word64) `quot` 8
 
-intersperse' :: Int64 -> Int64 -> B.Builder
-intersperse' a b = B.word32LE (fromIntegral a) <> B.word32LE (fromIntegral b)
+intersperse :: Int64 -> Int64 -> B.Builder
+intersperse a b = B.word32LE (fromIntegral a) <> B.word32LE (fromIntegral b)
 
-segmentsC :: MonadIO m => Int -> Char -> [IO.Handle] -> Source m BS.ByteString
-segmentsC version identifier handles = do
+segmentsC :: MonadIO m => String -> [IO.Handle] -> Source m BS.ByteString
+segmentsC asifType handles = do
   let segmentCount = fromIntegral $ length handles :: Int64
 
   rawSizes <- forM handles $ liftIO . IO.hGetAndResetOffset
-  let paddings    = padding64' <$> rawSizes
+  let paddings    = padding64 <$> rawSizes
   let paddedSizes = uncurry (+) <$> zip rawSizes paddings
 
-  let offsets = (+ headerLen' segmentCount) <$> init (scanl (+) 0 paddedSizes)
+  let offsets = (+ headerLen segmentCount) <$> init (scanl (+) 0 paddedSizes)
   let positions    = zip offsets rawSizes
 
   CL.sourceList
-    [ LBS.toStrict . B.toLazyByteString $ magic identifier
-      <> B.word64LE (fromIntegral version)
+    [ LBS.toStrict . B.toLazyByteString $ makeMagic asifType
       <> B.word64LE (fromIntegral segmentCount)           -- seg num
-      <> mconcat (uncurry intersperse' <$> positions)
+      <> mconcat (uncurry intersperse <$> positions)
     ]
 
   forM_ (zip paddings handles) $ \(padding, h) -> do
