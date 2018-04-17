@@ -42,6 +42,21 @@ library:
     - Arbor.File.Format.Asif.IO
     - Arbor.File.Format.Asif.ByteString.Builder
 
+
+executables:
+  asif:
+    main: Main.hs
+    source-dirs: app
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -O2
+    - -msse4.2
+    dependencies:
+    - asif
+    - directory
+    - optparse-applicative
+
 tests:
   asif-test:
     main:                Spec.hs
