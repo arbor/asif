@@ -1,4 +1,4 @@
-module App.IO where
+module Arbor.File.Format.Asif.IO where
 
 import Conduit
 import Data.Int

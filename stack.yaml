@@ -12,6 +12,6 @@ packages:
   extra-dep: true
 
 extra-deps:
-- hedgehog-0.5
+- hedgehog-0.5.3
 - hw-fingertree-strict-0.1.0.3
 - lazy-csv-0.5.1

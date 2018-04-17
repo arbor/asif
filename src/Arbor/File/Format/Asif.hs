@@ -5,7 +5,7 @@
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module SegmentedFormat
+module Arbor.File.Format.Asif
   ( binarySearch
   , extractSegments
   , getCodeMap

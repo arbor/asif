@@ -29,31 +29,18 @@ dependencies:
 - bytestring
 - conduit
 - conduit-combinators
-- conduit-extra
 - containers
-- directory
 - either
-- errors
 - exceptions
-- http-types
-- hw-bits
-- hw-fingertree-strict
-- lazy-csv
 - lens
-- mtl
-- resourcet
-- text
-- transformers
-- unordered-containers
 - vector
-- zlib
 
 library:
   source-dirs: src
   exposed-modules:
-    - SegmentedFormat
-    - App.IO
-    - App.ByteString.Lazy.Builder
+    - Arbor.File.Format.Asif
+    - Arbor.File.Format.Asif.IO
+    - Arbor.File.Format.Asif.ByteString.Builder
 
 tests:
   asif-test:
