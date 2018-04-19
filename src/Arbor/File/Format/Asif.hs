@@ -12,6 +12,7 @@ module Arbor.File.Format.Asif
   , getNameMap
   , segmentCidrs
   , segmentCodes
+  , segmentElements
   , segmentIdentifiers
   ) where
 
