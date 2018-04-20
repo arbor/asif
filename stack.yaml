@@ -15,3 +15,4 @@ extra-deps:
 - hedgehog-0.5.3
 - hw-fingertree-strict-0.1.0.3
 - lazy-csv-0.5.1
+- temporary-resourcet-0.1.0.0

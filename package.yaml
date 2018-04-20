@@ -33,6 +33,8 @@ dependencies:
 - either
 - exceptions
 - lens
+- temporary-resourcet
+- time
 - vector
 
 library:
@@ -41,7 +43,6 @@ library:
     - Arbor.File.Format.Asif
     - Arbor.File.Format.Asif.IO
     - Arbor.File.Format.Asif.ByteString.Builder
-
 
 executables:
   asif:

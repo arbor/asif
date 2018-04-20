@@ -2,6 +2,7 @@ module Arbor.File.Format.Asif.ByteString.Builder
   ( magicString
   , withSize
   , segmentsC
+  , segmentsRawC
   , makeMagic
   , magicLength
   ) where
@@ -13,6 +14,8 @@ import Data.ByteString.Builder
 import Data.Conduit            (Source)
 import Data.Int
 import Data.Monoid
+import Data.Time               (UTCTime, getCurrentTime)
+import Data.Time.Clock.POSIX   (utcTimeToPOSIXSeconds)
 import Data.Word
 
 import qualified Arbor.File.Format.Asif.IO  as IO
@@ -22,6 +25,7 @@ import qualified Data.ByteString.Lazy       as LBS
 import qualified Data.ByteString.Lazy.Char8 as LC8
 import qualified Data.Conduit.List          as CL
 import qualified GHC.IO.Handle              as IO
+import qualified System.IO.Temp             as IO
 
 makeMagic :: String -> Builder
 makeMagic c = B.lazyByteString (magicString c)
@@ -58,8 +62,8 @@ headerLen n = w64 + magicLength + n * w64
 intersperse :: Int64 -> Int64 -> B.Builder
 intersperse a b = B.word32LE (fromIntegral a) <> B.word32LE (fromIntegral b)
 
-segmentsC :: MonadIO m => String -> [IO.Handle] -> Source m BS.ByteString
-segmentsC asifType handles = do
+segmentsRawC :: MonadIO m => String -> [IO.Handle] -> Source m BS.ByteString
+segmentsRawC asifType handles = do
   let segmentCount = fromIntegral $ length handles :: Int64
 
   rawSizes <- forM handles $ liftIO . IO.hGetAndResetOffset
@@ -78,3 +82,17 @@ segmentsC asifType handles = do
   forM_ (zip paddings handles) $ \(padding, h) -> do
     sourceHandle h
     CL.sourceList (replicate (fromIntegral padding) (BS.singleton 0))
+
+timeAsMillis :: UTCTime -> Int64
+timeAsMillis time = round (utcTimeToPOSIXSeconds time) * 1000
+
+segmentsC :: (MonadIO m, MonadResource m) => String -> Maybe UTCTime -> [IO.Handle] -> m (Source m BS.ByteString)
+segmentsC asifType maybeTimestamp handles = do
+  fileTime <- maybe (liftIO getCurrentTime) return maybeTimestamp
+  (_, _, hMeta) <- IO.openTempFile Nothing "asif-meta"
+
+  liftIO $ B.hPutBuilder hMeta $ B.int64LE (timeAsMillis fileTime)
+
+  let source = segmentsRawC asifType (hMeta:handles)
+
+  return source
