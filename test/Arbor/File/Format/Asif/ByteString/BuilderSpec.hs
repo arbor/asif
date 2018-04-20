@@ -39,7 +39,7 @@ spec = describe "App.ByteString.Lazy.Builder" $ do
     liftIO $ BS.hPut h2 (LBS.toStrict b2)
     liftIO $ BS.hPut h3 (LBS.toStrict b3)
 
-    let segs = LB.segmentsC "ganx"
+    let segs = LB.segmentsRawC "wxyz"
           [ h1
           , h2
           , h3
@@ -53,4 +53,4 @@ spec = describe "App.ByteString.Lazy.Builder" $ do
 
     _ <- forAll $ pure $ LBS.unpack actual
 
-    C.extractSegments (AP.string "seg:ganx") actual === Right [b1, b2, b3]
+    C.extractSegments (AP.string "seg:wxyz") actual === Right [b1, b2, b3]
