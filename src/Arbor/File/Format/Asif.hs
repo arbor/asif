@@ -7,6 +7,7 @@
 
 module Arbor.File.Format.Asif
   ( binarySearch
+  , binarySearchExact
   , extractSegments
   , getCodeMap
   , getNameMap
@@ -122,18 +123,29 @@ segmentMap ks kf vs vf = foldr (\(k, v) m -> M.insert k v m) M.empty $ zip keys 
 
 binarySearch :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> Maybe Int
 binarySearch key values = do
-  let idx = s key values 0 (VU.length values - 1)
+  let idx = s 0 (VU.length values - 1)
   if idx > -1 then Just idx
   else Nothing
   where
-    s :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> Int -> Int -> Int
-    s k v l h
+    s l h
       | l >= h =
-        if (v VU.! h) <= k then h else -1
+        if (values VU.! h) <= key then h else -1
       | otherwise = do
         let m = l + (h - l) `div` 2
-        if (v VU.! m) > k then s k v l m
+        if (values VU.! m) > key then s l m
         else do
-          let result = s k v (m + 1) h
+          let result = s (m + 1) h
           if result == -1 then m
           else result
+
+binarySearchExact :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> Maybe Int
+binarySearchExact key values = go values key 0 (VU.length values - 1)
+  where
+    go hay needle lo hi
+      | hi < lo        = Nothing
+      | pivot > needle = go hay needle lo (mid - 1)
+      | pivot < needle = go hay needle (mid + 1) hi
+      | otherwise      = Just mid
+      where
+        mid   = lo + (hi - lo) `div` 2
+        pivot = hay VU.! mid
