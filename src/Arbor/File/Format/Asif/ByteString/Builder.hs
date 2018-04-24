@@ -1,3 +1,5 @@
+{-# LANGUAGE BangPatterns #-}
+
 module Arbor.File.Format.Asif.ByteString.Builder
   ( magicString
   , withSize
@@ -7,25 +9,31 @@ module Arbor.File.Format.Asif.ByteString.Builder
   , magicLength
   ) where
 
+import Arbor.File.Format.Asif.Type
 import Conduit
+import Control.Lens
 import Control.Monad
 import Data.Bits
 import Data.ByteString.Builder
-import Data.Conduit            (Source)
+import Data.Conduit                (Source)
 import Data.Int
+import Data.Maybe
 import Data.Monoid
-import Data.Time               (UTCTime, getCurrentTime)
-import Data.Time.Clock.POSIX   (utcTimeToPOSIXSeconds)
+import Data.Thyme.Clock
+import Data.Thyme.Clock.POSIX      (POSIXTime, getPOSIXTime)
 import Data.Word
+import Debug.Trace
 
-import qualified Arbor.File.Format.Asif.IO  as IO
-import qualified Data.ByteString            as BS
-import qualified Data.ByteString.Builder    as B
-import qualified Data.ByteString.Lazy       as LBS
-import qualified Data.ByteString.Lazy.Char8 as LC8
-import qualified Data.Conduit.List          as CL
-import qualified GHC.IO.Handle              as IO
-import qualified System.IO.Temp             as IO
+import qualified Arbor.File.Format.Asif.IO   as IO
+import qualified Arbor.File.Format.Asif.Lens as L
+import qualified Data.ByteString             as BS
+import qualified Data.ByteString.Builder     as B
+import qualified Data.ByteString.Lazy        as LBS
+import qualified Data.ByteString.Lazy.Char8  as LC8
+import qualified Data.Conduit.List           as CL
+import qualified Data.Text.Encoding          as T
+import qualified GHC.IO.Handle               as IO
+import qualified System.IO.Temp              as IO
 
 makeMagic :: String -> Builder
 makeMagic c = B.lazyByteString (magicString c)
@@ -83,16 +91,27 @@ segmentsRawC asifType handles = do
     sourceHandle h
     CL.sourceList (replicate (fromIntegral padding) (BS.singleton 0))
 
-timeAsMillis :: UTCTime -> Int64
-timeAsMillis time = round (utcTimeToPOSIXSeconds time) * 1000
+segmentsC :: (MonadIO m, MonadResource m)
+  => String
+  -> Maybe POSIXTime
+  -> [Segment IO.Handle]
+  -> m (Source m BS.ByteString)
+segmentsC asifType maybeTimestamp descs = do
+  fileTime <- maybe (liftIO getPOSIXTime) return maybeTimestamp
+  (_, _, hFilenames   ) <- IO.openTempFile Nothing "asif-filenames"
+  (_, _, hCreateTimes ) <- IO.openTempFile Nothing "asif-timestamps"
 
-segmentsC :: (MonadIO m, MonadResource m) => String -> Maybe UTCTime -> [IO.Handle] -> m (Source m BS.ByteString)
-segmentsC asifType maybeTimestamp handles = do
-  fileTime <- maybe (liftIO getCurrentTime) return maybeTimestamp
-  (_, _, hMeta) <- IO.openTempFile Nothing "asif-meta"
+  let metaMeta        = metaCreateTime fileTime
+  let descFilenames   = segment hFilenames  $ metaMeta <> metaFilename ".asif/filenames"
+  let descCreateTimes = segment hCreateTimes $ metaMeta <> metaFilename ".asif/createtimes"
+  let moreDescs       = descFilenames:descCreateTimes:descs
 
-  liftIO $ B.hPutBuilder hMeta $ B.int64LE (timeAsMillis fileTime)
+  forM_ (T.encodeUtf8 . fromMaybe "" . (^. L.meta . L.filename) <$> moreDescs) $ \filename ->
+    liftIO $ B.hPutBuilder hFilenames $ B.byteString filename <> B.word8 0
 
-  let source = segmentsRawC asifType (hMeta:handles)
+  forM_ (maybe 0 (^. microseconds) . (^. L.meta . L.createTime) <$> moreDescs) $ \time ->
+    liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE time
+
+  let source = segmentsRawC asifType ((^. L.payload) <$> moreDescs)
 
   return source

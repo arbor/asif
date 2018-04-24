@@ -6,6 +6,7 @@ module Arbor.File.Format.Asif.ByteString.BuilderSpec
 
 import Arbor.File.Format.Asif.ByteString.Builder
 import Conduit
+import Control.Lens
 import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
 import System.IO                                 (openTempFile)
@@ -13,6 +14,7 @@ import Test.Hspec
 
 import qualified Arbor.File.Format.Asif                    as C
 import qualified Arbor.File.Format.Asif.ByteString.Builder as LB
+import qualified Arbor.File.Format.Asif.Lens               as L
 import qualified Data.Attoparsec.ByteString                as AP
 import qualified Data.ByteString                           as BS
 import qualified Data.ByteString.Lazy                      as LBS
@@ -49,8 +51,10 @@ spec = describe "App.ByteString.Lazy.Builder" $ do
 
     liftIO $ IO.hSeek he IO.AbsoluteSeek 0
 
-    actual <- liftIO $ LBS.hGetContents he
+    contents <- liftIO $ LBS.hGetContents he
 
-    _ <- forAll $ pure $ LBS.unpack actual
+    _ <- forAll $ pure $ LBS.unpack contents
 
-    C.extractSegments (AP.string "seg:wxyz") actual === Right [b1, b2, b3]
+    let Right segments = C.extractSegments (AP.string "seg:wxyz") contents
+
+    ((^. L.payload) <$> segments) === [b1, b2, b3]
