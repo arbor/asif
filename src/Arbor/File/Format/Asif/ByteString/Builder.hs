@@ -106,11 +106,10 @@ segmentsC asifType maybeTimestamp descs = do
   let descCreateTimes = segment hCreateTimes $ metaMeta <> metaFilename ".asif/createtimes"
   let moreDescs       = descFilenames:descCreateTimes:descs
 
-  forM_ (T.encodeUtf8 . fromMaybe "" . (^. L.meta . L.filename) <$> moreDescs) $ \filename ->
-    liftIO $ B.hPutBuilder hFilenames $ B.byteString filename <> B.word8 0
-
-  forM_ (maybe 0 (^. microseconds) . (^. L.meta . L.createTime) <$> moreDescs) $ \time ->
-    liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE time
+  forM_ moreDescs $ \desc -> do
+    liftIO $ B.hPutBuilder hFilenames $ B.byteString (desc ^. L.meta . L.filename & fromMaybe "" & T.encodeUtf8) <> B.word8 0
+    liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE $ (desc ^. L.meta . L.createTime) <&> (^. microseconds) & fromMaybe 0
+    return ()
 
   let source = segmentsRawC asifType ((^. L.payload) <$> moreDescs)
 
