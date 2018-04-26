@@ -34,15 +34,18 @@ dependencies:
 - exceptions
 - lens
 - temporary-resourcet
-- time
+- text
+- thyme
 - vector
 
 library:
   source-dirs: src
   exposed-modules:
     - Arbor.File.Format.Asif
-    - Arbor.File.Format.Asif.IO
     - Arbor.File.Format.Asif.ByteString.Builder
+    - Arbor.File.Format.Asif.IO
+    - Arbor.File.Format.Asif.Lens
+    - Arbor.File.Format.Asif.Type
 
 executables:
   asif:

@@ -15,6 +15,7 @@ import System.Directory
 import Text.Printf
 
 import qualified App.Commands.ExtractSegments.Lens as L
+import qualified Arbor.File.Format.Asif.Lens       as L
 import qualified Data.Attoparsec.ByteString        as AP
 import qualified Data.ByteString                   as BS
 import qualified Data.ByteString.Lazy              as LBS
@@ -55,5 +56,5 @@ runExtractSegments opt = do
       createDirectoryIfMissing True targetPath
 
       forM_ (zip [0..] segments) $ \(i :: Int, segment) ->
-        LBS.writeFile (targetPath <> "/" <> printf "%03d" i <> ".seg") segment
+        LBS.writeFile (targetPath <> "/" <> printf "%03d" i <> ".seg") (segment ^. L.payload)
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
