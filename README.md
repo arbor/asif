@@ -3,7 +3,9 @@
 
 Library for creating and querying segmented feeds.
 
-## Feed details
+## File Format Specification
+
+### Layer 0: Segments
 
 ```
 +--------------------+
@@ -46,6 +48,19 @@ Vector keys are fixed-length values such as 4-byte IPv4 addresses,
 All values are little-endian.
 
 Values are other ints or can be null-terminated strings.
+
+### Layer 1: Segment filenames
+
+Segment 0 must contain a concatenated list of null terminated filenames.
+
+The first filename must be `.asif/filenames`.
+
+The n-th filename in the segment 0 describes the n-th segment in the file.
+
+The `.asif/filenames` segment may contain a named segment `.asif/createtime`.
+If it does, this segment concatenated `Word64` numbers representing the create
+time of each file in microseconds since epoch.  If the segment does not have a
+create time, it's create time entry will be `0` instead.
 
 ## Segmented format usage
 
