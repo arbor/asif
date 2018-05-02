@@ -35,6 +35,8 @@ import qualified Data.Vector.Storable                   as DVS
 import qualified System.Directory                       as IO
 import qualified System.IO                              as IO
 
+{-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
+
 parseDumpOptions :: Parser DumpOptions
 parseDumpOptions = DumpOptions
   <$> strOption
@@ -71,7 +73,7 @@ runDump opt = do
         IO.putStrLn $ "==== " <> T.unpack path <> "===="
 
         case segment ^. L.meta . L.format of
-          Just (Known (F.StringZ)) ->
+          Just (Known F.StringZ) ->
             forM_ (init (LBS.split 0 (segment ^. L.payload))) $ \bs -> do
               IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
               return ()
@@ -79,7 +81,7 @@ runDump opt = do
             forM_ (LBS.chunkBy (fromIntegral n) (segment ^. L.payload)) $ \bs -> do
               IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
               return ()
-          Just (Known F.TimeMicros) ->
+          Just (Known F.TimeMillis64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
               let w = G.runGet G.getWord64le (LBS.take 8 (bs <> LBS.replicate 8 0))
               IO.print w
