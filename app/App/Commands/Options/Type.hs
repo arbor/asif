@@ -9,3 +9,8 @@ data ExtractSegmentsOptions = ExtractSegmentsOptions
   { extractSegmentsOptionsSource :: FilePath
   , extractSegmentsOptionsTarget :: FilePath
   } deriving (Eq, Show)
+
+data DumpOptions = DumpOptions
+  { dumpOptionsSource :: FilePath
+  , dumpOptionsTarget :: FilePath
+  } deriving (Eq, Show)

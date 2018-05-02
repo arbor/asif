@@ -9,31 +9,37 @@ module Arbor.File.Format.Asif.ByteString.Builder
   , magicLength
   ) where
 
+import Arbor.File.Format.Asif.Text
 import Arbor.File.Format.Asif.Type
+import Arbor.File.Format.Asif.Whatever
 import Conduit
 import Control.Lens
 import Control.Monad
 import Data.Bits
 import Data.ByteString.Builder
-import Data.Conduit                (Source)
+import Data.Conduit                    (Source)
 import Data.Int
 import Data.Maybe
 import Data.Monoid
+import Data.Text                       (Text)
 import Data.Thyme.Clock
-import Data.Thyme.Clock.POSIX      (POSIXTime, getPOSIXTime)
+import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
 import Data.Word
-import Debug.Trace
 
-import qualified Arbor.File.Format.Asif.IO   as IO
-import qualified Arbor.File.Format.Asif.Lens as L
-import qualified Data.ByteString             as BS
-import qualified Data.ByteString.Builder     as B
-import qualified Data.ByteString.Lazy        as LBS
-import qualified Data.ByteString.Lazy.Char8  as LC8
-import qualified Data.Conduit.List           as CL
-import qualified Data.Text.Encoding          as T
-import qualified GHC.IO.Handle               as IO
-import qualified System.IO.Temp              as IO
+import qualified Arbor.File.Format.Asif.ByteString as BS
+import qualified Arbor.File.Format.Asif.Format     as F
+import qualified Arbor.File.Format.Asif.IO         as IO
+import qualified Arbor.File.Format.Asif.Lens       as L
+import qualified Data.ByteString                   as BS
+import qualified Data.ByteString.Builder           as B
+import qualified Data.ByteString.Lazy              as LBS
+import qualified Data.ByteString.Lazy.Char8        as LC8
+import qualified Data.Conduit.List                 as CL
+import qualified Data.Text                         as T
+import qualified Data.Text.Encoding                as T
+import qualified GHC.IO.Handle                     as IO
+import qualified System.IO                         as IO hiding (openTempFile)
+import qualified System.IO.Temp                    as IO
 
 makeMagic :: String -> Builder
 makeMagic c = B.lazyByteString (magicString c)
@@ -96,21 +102,24 @@ segmentsC :: (MonadIO m, MonadResource m)
   -> Maybe POSIXTime
   -> [Segment IO.Handle]
   -> m (Source m BS.ByteString)
-segmentsC asifType maybeTimestamp descs = do
+segmentsC asifType maybeTimestamp metas = do
   fileTime <- maybe (liftIO getPOSIXTime) return maybeTimestamp
   (_, _, hFilenames   ) <- IO.openTempFile Nothing "asif-filenames"
   (_, _, hCreateTimes ) <- IO.openTempFile Nothing "asif-timestamps"
+  (_, _, hFormats     ) <- IO.openTempFile Nothing "asif-formats"
 
   let metaMeta        = metaCreateTime fileTime
-  let descFilenames   = segment hFilenames  $ metaMeta <> metaFilename ".asif/filenames"
-  let descCreateTimes = segment hCreateTimes $ metaMeta <> metaFilename ".asif/createtimes"
-  let moreDescs       = descFilenames:descCreateTimes:descs
+  let metaFilenames   = segment hFilenames    $ metaMeta <> metaFilename ".asif/filenames"   <> metaFormat (Known F.StringZ)
+  let metaCreateTimes = segment hCreateTimes  $ metaMeta <> metaFilename ".asif/createtimes" <> metaFormat (Known F.TimeMicros)
+  let metaFormats     = segment hFormats      $ metaMeta <> metaFilename ".asif/formats"     <> metaFormat (Known F.StringZ)
+  let moreMetas       = metaFilenames:metaCreateTimes:metaFormats:metas
 
-  forM_ moreDescs $ \desc -> do
-    liftIO $ B.hPutBuilder hFilenames $ B.byteString (desc ^. L.meta . L.filename & fromMaybe "" & T.encodeUtf8) <> B.word8 0
-    liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE $ (desc ^. L.meta . L.createTime) <&> (^. microseconds) & fromMaybe 0
+  forM_ moreMetas $ \meta -> do
+    liftIO $ B.hPutBuilder hFilenames   $ B.byteString (meta ^. L.meta . L.filename & fromMaybe "" & T.encodeUtf8) <> B.word8 0
+    liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE $ (meta ^. L.meta . L.createTime) <&> (^. microseconds) & fromMaybe 0
+    liftIO $ B.hPutBuilder hFormats     $ B.byteString (meta ^. L.meta . L.format <&> tShowWhatever & fromMaybe "" & T.encodeUtf8) <> B.word8 0
     return ()
 
-  let source = segmentsRawC asifType ((^. L.payload) <$> moreDescs)
+  let source = segmentsRawC asifType ((^. L.payload) <$> moreMetas)
 
   return source
