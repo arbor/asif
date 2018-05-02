@@ -4,17 +4,17 @@ data Format
   = Binary
   | BitString
   | Char
+  | Int8LE
   | Int16LE
   | Int32LE
   | Int64LE
-  | Int8LE
   | Ipv4
-  | Repeat Int Format
+  | Repeat Word Format
   | StringZ
   | Text
   | TimeMicros
+  | Word8LE
   | Word16LE
   | Word32LE
-  | Word8LE
   | Word64LE
   deriving (Eq, Read, Show)

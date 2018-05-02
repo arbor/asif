@@ -11,6 +11,7 @@ import Control.Monad
 import Data.Function
 import Data.List
 import Data.Monoid
+import Data.Text                       (Text)
 import Data.Word
 import Numeric                         (showHex)
 import Options.Applicative
@@ -29,6 +30,7 @@ import qualified Data.ByteString.Lazy                   as LBS
 import qualified Data.ByteString.Lazy.Char8             as LBSC
 import qualified Data.Map                               as M
 import qualified Data.Text                              as T
+import qualified Data.Text.Encoding                     as T
 import qualified Data.Vector.Storable                   as DVS
 import qualified System.Directory                       as IO
 import qualified System.IO                              as IO
@@ -48,9 +50,6 @@ parseDumpOptions = DumpOptions
 
 commandDump :: Parser (IO ())
 commandDump = runDump <$> parseDumpOptions
-
-hexByte :: Word8 -> String
-hexByte w = undefined
 
 runDump :: DumpOptions -> IO ()
 runDump opt = do
@@ -72,6 +71,19 @@ runDump opt = do
         IO.putStrLn $ "==== " <> T.unpack path <> "===="
 
         case segment ^. L.meta . L.format of
+          Just (Known (F.StringZ)) ->
+            forM_ (init (LBS.split 0 (segment ^. L.payload))) $ \bs -> do
+              IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
+              return ()
+          Just (Known (F.Repeat n F.Char)) ->
+            forM_ (LBS.chunkBy (fromIntegral n) (segment ^. L.payload)) $ \bs -> do
+              IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
+              return ()
+          Just (Known F.TimeMicros) ->
+            forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getWord64le (LBS.take 8 (bs <> LBS.replicate 8 0))
+              IO.print w
+              return ()
           Just (Known F.Word64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
               let w = G.runGet G.getWord64le (LBS.take 8 (bs <> LBS.replicate 8 0))
