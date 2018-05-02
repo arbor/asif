@@ -12,7 +12,8 @@ data Format
   | Repeat Word Format
   | StringZ
   | Text
-  | TimeMicros
+  | TimeMicros64LE
+  | TimeMillis64LE
   | Word8LE
   | Word16LE
   | Word32LE
