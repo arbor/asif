@@ -19,7 +19,10 @@ module Arbor.File.Format.Asif
   ) where
 
 import Arbor.File.Format.Asif.ByteString.Builder
+import Arbor.File.Format.Asif.Format             (Format)
+import Arbor.File.Format.Asif.Text
 import Arbor.File.Format.Asif.Type
+import Arbor.File.Format.Asif.Whatever
 import Control.Lens
 import Control.Monad
 import Data.Binary.Get
@@ -33,23 +36,25 @@ import Data.Maybe
 import Data.Monoid
 import Data.Text                                 (Text)
 import Data.Text.Encoding                        (decodeUtf8')
+import Data.Text.Encoding.Error
 import Data.Thyme.Clock                          (microseconds)
 import Data.Thyme.Clock.POSIX                    (POSIXTime)
 import Data.Traversable
 import Data.Word
 
-import qualified Arbor.File.Format.Asif.Lens as L
-import qualified Data.Attoparsec.ByteString  as AP
-import qualified Data.Binary.Get             as G
-import qualified Data.ByteString             as BS
-import qualified Data.ByteString.Builder     as B
-import qualified Data.ByteString.Char8       as C8
-import qualified Data.ByteString.Lazy        as LBS
-import qualified Data.ByteString.Lazy.Char8  as LC8
-import qualified Data.Map.Strict             as M
-import qualified Data.Text                   as LT
-import qualified Data.Text.Lazy              as T
-import qualified Data.Vector.Unboxed         as VU
+import qualified Arbor.File.Format.Asif.Format as F
+import qualified Arbor.File.Format.Asif.Lens   as L
+import qualified Data.Attoparsec.ByteString    as AP
+import qualified Data.Binary.Get               as G
+import qualified Data.ByteString               as BS
+import qualified Data.ByteString.Builder       as B
+import qualified Data.ByteString.Char8         as C8
+import qualified Data.ByteString.Lazy          as LBS
+import qualified Data.ByteString.Lazy.Char8    as LC8
+import qualified Data.Map.Strict               as M
+import qualified Data.Text                     as LT
+import qualified Data.Text.Lazy                as T
+import qualified Data.Vector.Unboxed           as VU
 
 type Name = String
 type Code = (Char, Char)
@@ -114,6 +119,13 @@ extractTimes = ((^. from microseconds) <$>) <$> G.runGet go
             then (:) <$> getInt64le <*> go
             else return []
 
+extractFormats :: LBS.ByteString -> [Maybe (Whatever Format)]
+extractFormats bs = LBS.split 0 bs <&> decodeUtf8' . LBS.toStrict <&> convert
+  where convert :: Either UnicodeException Text -> Maybe (Whatever Format)
+        convert (Left e)   = Nothing
+        convert (Right "") = Nothing
+        convert (Right t)  = Just (tReadWhatever t)
+
 extractSegments :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [Segment LBS.ByteString]
 extractSegments magicParser bs = do
   bss <- extractSegmentByteStrings magicParser bs
@@ -127,6 +139,7 @@ extractSegments magicParser bs = do
               <> ByIndex (replicate (length bss) mempty)
               <> ByIndex (metaFilename    <$> filenames)
               <> ByIndex (metaCreateTime  <$> lookupSegment ".asif/createtimes" namedSegments extractTimes)
+              <> ByIndex (metaMaybeFormat <$> lookupSegment ".asif/formats"     namedSegments extractFormats)
 
         return $ uncurry segment <$> zip bss (unByIndex metas)
       else return (mkDefaultSegment <$> bss)
