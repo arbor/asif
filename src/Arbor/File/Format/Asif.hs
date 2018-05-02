@@ -193,10 +193,11 @@ segmentMap ks kf vs vf = foldr (\(k, v) m -> M.insert k v m) M.empty $ zip keys 
     values = segmentElements' vf vs
 
 binarySearch :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> Maybe Int
-binarySearch key values = if VU.null values then Nothing else do
+binarySearch key values = do
+  guard (not (VU.null values))
   let idx = s 0 (VU.length values - 1)
-  if idx > -1 then Just idx
-  else Nothing
+  guard (idx > -1)
+  return idx
   where
     s l h
       | l >= h =
