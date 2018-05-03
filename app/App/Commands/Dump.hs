@@ -5,6 +5,7 @@ module App.Commands.Dump where
 
 import App.Commands.Options.Type
 import Arbor.File.Format.Asif
+import Arbor.File.Format.Asif.Data.Ip
 import Arbor.File.Format.Asif.Whatever
 import Control.Lens
 import Control.Monad
@@ -13,8 +14,6 @@ import Data.List
 import Data.Monoid
 import Data.Text                       (Text)
 import Data.Thyme.Clock
-import Data.Thyme.Clock
-import Data.Thyme.Clock.POSIX
 import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
 import Data.Thyme.Format               (formatTime)
 import Data.Thyme.Time.Core
@@ -79,7 +78,7 @@ runDump opt = do
       createDirectoryIfMissing True targetPath
 
       forM_ (M.toList namedSegments) $ \(path, segment) -> do
-        IO.putStrLn $ "==== " <> T.unpack path <> "===="
+        IO.putStrLn $ "==== " <> T.unpack path <> " ===="
 
         case segment ^. L.meta . L.format of
           Just (Known F.StringZ) ->
@@ -101,6 +100,12 @@ runDump opt = do
               let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
               let t :: POSIXTime = w ^. from microseconds
               IO.putStrLn $ showTime (posixSecondsToUTCTime t) <> " (" <> show w <> " µs)"
+              return ()
+          Just (Known F.Ipv4) ->
+            forM_ (LBS.chunkBy 4 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getWord32le (LBS.take 8 (bs <> LBS.replicate 4 0))
+              let ipString = w & word32ToIpv4 & ipv4ToString
+              IO.putStrLn $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w <> ")"
               return ()
           Just (Known F.Word64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
