@@ -1,4 +1,6 @@
-module Arbor.File.Format.Asif.Data.Read where
+module Arbor.File.Format.Asif.Data.Read
+  ( stringToAnyDigits
+  ) where
 
 import Control.Monad
 import Text.Read
