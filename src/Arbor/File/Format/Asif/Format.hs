@@ -4,7 +4,7 @@ data Format
   = Binary
   | BitString
   | Char
-  | Int8LE
+  | Int8
   | Int16LE
   | Int32LE
   | Int64LE
@@ -14,7 +14,7 @@ data Format
   | Text
   | TimeMicros64LE
   | TimeMillis64LE
-  | Word8LE
+  | Word8
   | Word16LE
   | Word32LE
   | Word64LE
