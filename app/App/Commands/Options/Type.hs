@@ -1,5 +1,11 @@
 module App.Commands.Options.Type where
 
+data EncodeFilesOptions = EncodeFilesOptions
+  { encodeFilesOptionsSource   :: FilePath
+  , encodeFilesOptionsTarget   :: FilePath
+  , encodeFilesOptionsAsifType :: String
+  } deriving (Eq, Show)
+
 data ExtractFilesOptions = ExtractFilesOptions
   { extractFilesOptionsSource :: FilePath
   , extractFilesOptionsTarget :: FilePath
