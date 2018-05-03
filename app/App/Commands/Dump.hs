@@ -9,6 +9,7 @@ import Arbor.File.Format.Asif.Data.Ip
 import Arbor.File.Format.Asif.Whatever
 import Control.Lens
 import Control.Monad
+import Data.Char                       (isPrint)
 import Data.Function
 import Data.List
 import Data.Monoid
@@ -141,7 +142,13 @@ runDump opt = do
           Just (Known F.BitString) ->
             IO.putStrLn (bitShow (segment ^. L.payload))
           _ ->
-            forM_ (LBS.chunkBy 16 (segment ^. L.payload)) $ \bs -> do
-              IO.putStrLn $ mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))
+            forM_ (zip (LBS.chunkBy 16 (segment ^. L.payload)) [0, 16..]) $ \(bs, i) -> do
+              let bytes = mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))
+              IO.putStr $ reverse $ take 8 $ reverse $ ("0000000" ++) $ showHex i ""
+              IO.putStr "  "
+              IO.putStr $ bytes <> replicate (47 - length bytes) ' '
+              IO.putStr "  "
+              IO.putStr $ (\c -> if isPrint c then c else '.') <$> LBSC.unpack bs
+              IO.putStrLn ""
 
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
