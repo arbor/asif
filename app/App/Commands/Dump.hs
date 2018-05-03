@@ -18,6 +18,7 @@ import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
 import Data.Thyme.Format               (formatTime)
 import Data.Thyme.Time.Core
 import Data.Word
+import HaskellWorks.Data.Bits.BitShow
 import Numeric                         (showHex)
 import Options.Applicative
 import System.Directory
@@ -42,6 +43,7 @@ import qualified System.Directory                       as IO
 import qualified System.IO                              as IO
 
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
+{-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 
 parseDumpOptions :: Parser DumpOptions
 parseDumpOptions = DumpOptions
@@ -84,37 +86,62 @@ runDump opt = do
           Just (Known F.StringZ) ->
             forM_ (init (LBS.split 0 (segment ^. L.payload))) $ \bs -> do
               IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
-              return ()
           Just (Known (F.Repeat n F.Char)) ->
             forM_ (LBS.chunkBy (fromIntegral n) (segment ^. L.payload)) $ \bs -> do
               IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
-              return ()
           Just (Known F.TimeMillis64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
               let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
               let t :: POSIXTime = (w `div` 1000) ^. from microseconds
               IO.putStrLn $ showTime (posixSecondsToUTCTime t) <> " (" <> show w <> " ms)"
-              return ()
           Just (Known F.TimeMicros64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
               let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
               let t :: POSIXTime = w ^. from microseconds
               IO.putStrLn $ showTime (posixSecondsToUTCTime t) <> " (" <> show w <> " µs)"
-              return ()
           Just (Known F.Ipv4) ->
             forM_ (LBS.chunkBy 4 (segment ^. L.payload)) $ \bs -> do
               let w = G.runGet G.getWord32le (LBS.take 8 (bs <> LBS.replicate 4 0))
               let ipString = w & word32ToIpv4 & ipv4ToString
               IO.putStrLn $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w <> ")"
-              return ()
+          Just (Known F.Int64LE) ->
+            forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
+              IO.print w
+          Just (Known F.Int32LE) ->
+            forM_ (LBS.chunkBy 4 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getInt32le (LBS.take 4 (bs <> LBS.replicate 4 0))
+              IO.print w
+          Just (Known F.Int16LE) ->
+            forM_ (LBS.chunkBy 2 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getInt16le (LBS.take 2 (bs <> LBS.replicate 2 0))
+              IO.print w
+          Just (Known F.Int8) ->
+            forM_ (LBS.chunkBy 1 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getInt8 (LBS.take 1 (bs <> LBS.replicate 1 0))
+              IO.print w
           Just (Known F.Word64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
               let w = G.runGet G.getWord64le (LBS.take 8 (bs <> LBS.replicate 8 0))
               IO.print w
-              return ()
+          Just (Known F.Word32LE) ->
+            forM_ (LBS.chunkBy 4 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getWord32le (LBS.take 4 (bs <> LBS.replicate 4 0))
+              IO.print w
+          Just (Known F.Word16LE) ->
+            forM_ (LBS.chunkBy 2 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getWord16le (LBS.take 2 (bs <> LBS.replicate 2 0))
+              IO.print w
+          Just (Known F.Word8) ->
+            forM_ (LBS.chunkBy 1 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getWord8 (LBS.take 1 (bs <> LBS.replicate 1 0))
+              IO.print w
+          Just (Known F.Text) ->
+            LBSC.putStrLn (segment ^. L.payload)
+          Just (Known F.BitString) ->
+            IO.putStrLn (bitShow (segment ^. L.payload))
           _ ->
             forM_ (LBS.chunkBy 16 (segment ^. L.payload)) $ \bs -> do
               IO.putStrLn $ mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))
-              return ()
 
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""

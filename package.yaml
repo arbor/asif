@@ -33,6 +33,7 @@ dependencies:
 - cpu
 - either
 - exceptions
+- hw-bits
 - iproute
 - lens
 - old-locale
