@@ -1,5 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
-
 module Arbor.File.Format.Asif.ByteString.Builder
   ( magicString
   , withSize
