@@ -100,7 +100,7 @@ runDump opt = do
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
               let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
               let t :: POSIXTime = w ^. from microseconds
-              IO.putStrLn $ showTime (posixSecondsToUTCTime t) <> " (" <> show w <> "us)"
+              IO.putStrLn $ showTime (posixSecondsToUTCTime t) <> " (" <> show w <> " µs)"
               return ()
           Just (Known F.Word64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
