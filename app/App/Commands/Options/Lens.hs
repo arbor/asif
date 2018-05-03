@@ -7,5 +7,6 @@ import App.Commands.Options.Type
 import Control.Lens
 
 makeFields ''DumpOptions
+makeFields ''EncodeFilesOptions
 makeFields ''ExtractFilesOptions
 makeFields ''ExtractSegmentsOptions

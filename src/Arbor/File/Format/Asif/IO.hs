@@ -1,10 +1,13 @@
 module Arbor.File.Format.Asif.IO where
 
 import Conduit
+import Control.Monad.IO.Class       (MonadIO, liftIO)
+import Control.Monad.Trans.Resource
 import Data.Int
 import System.IO
 
 import qualified GHC.IO.Handle as IO
+import qualified System.IO     as IO
 
 withFileOrStd :: FilePath -> IOMode -> (Handle -> IO r) -> IO r
 withFileOrStd filePath mode f = if filePath == "-"
@@ -21,3 +24,9 @@ hGetAndResetOffset h = do
   liftIO $ hFlush h
   liftIO $ hSeek  h AbsoluteSeek 0
   return (fromIntegral offset)
+
+openTargetOrStdOut :: (MonadResource m, MonadIO m) => FilePath -> IO.IOMode -> m IO.Handle
+openTargetOrStdOut "-" _ = return IO.stdout
+openTargetOrStdOut filePath ioMode = snd <$> allocate
+  (liftIO $ IO.openFile filePath ioMode)
+  (liftIO . IO.hClose)

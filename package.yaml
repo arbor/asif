@@ -29,6 +29,7 @@ dependencies:
 - bytestring
 - conduit
 - conduit-combinators
+- conduit-extra
 - containers
 - cpu
 - either
@@ -37,6 +38,7 @@ dependencies:
 - iproute
 - lens
 - old-locale
+- resourcet
 - temporary-resourcet
 - text
 - thyme
