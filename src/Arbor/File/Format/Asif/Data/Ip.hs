@@ -6,12 +6,7 @@ module Arbor.File.Format.Asif.Data.Ip
   ) where
 
 import Arbor.File.Format.Asif.Data.Read
-import Control.Lens                     ((^.))
-import Control.Lens.Iso                 (from)
-import Control.Monad
 import Data.IP
-import Data.Thyme.Clock                 (microseconds)
-import Data.Thyme.Clock.POSIX           (POSIXTime)
 import Data.Word
 import System.Endian
 import Text.Read

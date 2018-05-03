@@ -97,7 +97,7 @@ n.b. that `names` is a lens provided for each feed. Other lenses may be provided
 
 ```
 $ stack build
-$ stack exec -- asif extract-segments --source ./test/resources/geo_countries_columnar.columnar --target out
+$ stack exec -- asif extract-segments --source ./test/resources/geo_countries_columnar.asif --target out
 $ for x in out/*.seg; do hexdump -C $x; done
 00000000  00 00 00 01 00 01 00 01  00 02 00 01 00 04 00 01  |................|
 00000010  00 08 00 01 00 10 00 01  00 20 00 01 00 40 00 01  |......... ...@..|

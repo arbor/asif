@@ -9,7 +9,6 @@ import Control.Monad
 import Data.Function
 import Data.Monoid
 import Data.Word
--- import HaskellWorks.Data.Bits.BitWise
 import Options.Applicative
 import System.Directory
 import Text.Printf

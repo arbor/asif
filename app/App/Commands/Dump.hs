@@ -44,7 +44,6 @@ import qualified System.Directory                       as IO
 import qualified System.IO                              as IO
 
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
-{-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 
 parseDumpOptions :: Parser DumpOptions
 parseDumpOptions = DumpOptions
@@ -85,10 +84,10 @@ runDump opt = do
 
         case segment ^. L.meta . L.format of
           Just (Known F.StringZ) ->
-            forM_ (init (LBS.split 0 (segment ^. L.payload))) $ \bs -> do
+            forM_ (init (LBS.split 0 (segment ^. L.payload))) $ \bs ->
               IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
           Just (Known (F.Repeat n F.Char)) ->
-            forM_ (LBS.chunkBy (fromIntegral n) (segment ^. L.payload)) $ \bs -> do
+            forM_ (LBS.chunkBy (fromIntegral n) (segment ^. L.payload)) $ \bs ->
               IO.putStrLn $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
           Just (Known F.TimeMillis64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
