@@ -110,7 +110,7 @@ segmentsC asifType maybeTimestamp metas = do
 
   let metaMeta        = metaCreateTime fileTime
   let metaFilenames   = segment hFilenames    $ metaMeta <> metaFilename ".asif/filenames"   <> metaFormat (Known F.StringZ)
-  let metaCreateTimes = segment hCreateTimes  $ metaMeta <> metaFilename ".asif/createtimes" <> metaFormat (Known F.TimeMillis64LE)
+  let metaCreateTimes = segment hCreateTimes  $ metaMeta <> metaFilename ".asif/createtimes" <> metaFormat (Known F.TimeMicros64LE)
   let metaFormats     = segment hFormats      $ metaMeta <> metaFilename ".asif/formats"     <> metaFormat (Known F.StringZ)
   let moreMetas       = metaFilenames:metaCreateTimes:metaFormats:metas
 
