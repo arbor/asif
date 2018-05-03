@@ -33,6 +33,7 @@ dependencies:
 - either
 - exceptions
 - lens
+- old-locale
 - temporary-resourcet
 - text
 - thyme

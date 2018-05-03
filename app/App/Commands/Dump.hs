@@ -12,10 +12,17 @@ import Data.Function
 import Data.List
 import Data.Monoid
 import Data.Text                       (Text)
+import Data.Thyme.Clock
+import Data.Thyme.Clock
+import Data.Thyme.Clock.POSIX
+import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
+import Data.Thyme.Format               (formatTime)
+import Data.Thyme.Time.Core
 import Data.Word
 import Numeric                         (showHex)
 import Options.Applicative
 import System.Directory
+import System.Locale                   (defaultTimeLocale, iso8601DateFormat)
 import Text.Printf
 
 import qualified App.Commands.Options.Lens              as L
@@ -53,11 +60,13 @@ parseDumpOptions = DumpOptions
 commandDump :: Parser (IO ())
 commandDump = runDump <$> parseDumpOptions
 
+showTime :: FormatTime t => t -> String
+showTime = formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S %Z"))
+
 runDump :: DumpOptions -> IO ()
 runDump opt = do
   h <- IO.openFile (opt ^. L.source) IO.ReadMode
   contents <- LBS.hGetContents h
-  -- TODO pass in magic
   case extractNamedSegments magic contents of
     Left error -> do
       IO.hPutStrLn IO.stderr $ "Error occured: " <> error
@@ -83,8 +92,15 @@ runDump opt = do
               return ()
           Just (Known F.TimeMillis64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
-              let w = G.runGet G.getWord64le (LBS.take 8 (bs <> LBS.replicate 8 0))
-              IO.print w
+              let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
+              let t :: POSIXTime = (w `div` 1000) ^. from microseconds
+              IO.putStrLn $ showTime (posixSecondsToUTCTime t) <> " (" <> show w <> " ms)"
+              return ()
+          Just (Known F.TimeMicros64LE) ->
+            forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
+              let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
+              let t :: POSIXTime = w ^. from microseconds
+              IO.putStrLn $ showTime (posixSecondsToUTCTime t) <> " (" <> show w <> "us)"
               return ()
           Just (Known F.Word64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. L.payload)) $ \bs -> do
