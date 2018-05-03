@@ -50,6 +50,7 @@ library:
     - Arbor.File.Format.Asif.ByteString.Builder
     - Arbor.File.Format.Asif.ByteString.Lazy
     - Arbor.File.Format.Asif.Data.Ip
+    - Arbor.File.Format.Asif.Data.Read
     - Arbor.File.Format.Asif.Format
     - Arbor.File.Format.Asif.IO
     - Arbor.File.Format.Asif.Lens
