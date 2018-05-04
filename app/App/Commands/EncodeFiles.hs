@@ -45,6 +45,7 @@ parseEncodeFilesOptions = EncodeFilesOptions
   <*> strOption
       (   long "target"
       <>  metavar "FILE"
+      <>  value "-"
       <>  help "Output file"
       )
   <*> strOption

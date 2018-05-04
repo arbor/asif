@@ -36,6 +36,7 @@ cabal.config
 *.ps
 *.hp
 *.prof
+/out
 
 ### Emacs ###
 # -*- mode: gitignore; -*-
