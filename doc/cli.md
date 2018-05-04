@@ -6,7 +6,7 @@ file if it exists.
 
 
 ```
-$ cat test/resources/geo_countries_columnar.asif | asif dump
+$ cat test/resources/countries.asif | asif dump
 ==== [0] .asif/filenames ====
 .asif/filenames
 .asif/createtimes
@@ -185,7 +185,7 @@ $ cat test/resources/single-segment.asif | asif dump
 The `extract-segments` command can be used to extract every segment into its own file:
 
 ```
-$ cat test/resources/geo_countries_columnar.asif | asif extract-segments --target out/countries/1
+$ cat test/resources/countries.asif | asif extract-segments --target out/countries/1
 Writing to: out/countries/1
 $ find out/countries/1 -type f
 out/countries/1/007.seg
@@ -253,7 +253,7 @@ The `extract-files` command does the same thing, except it uses filenames that a
 in the `asif` file:
 
 ```
-$ cat test/resources/geo_countries_columnar.asif | asif extract-files --target out/countries/2
+$ cat test/resources/countries.asif | asif extract-files --target out/countries/2
 Writing to: out/countries/2
 $ for x in $(find out/countries/2 -type f | sort); do echo "== $x =="; hexdump -C $x; done
 == out/countries/2/.asif/createtimes ==
@@ -327,8 +327,8 @@ of an `asif` file.  Note that to do this correctly, the contents `.asif/filename
 needs to be accurate if any files have been added or removed.
 
 ```
-$ cat test/resources/geo_countries_columnar.asif | asif extract-files --target out/countries/2
+$ cat test/resources/countries.asif | asif extract-files --target out/countries/2
 Writing to: out/countries/2
 $ asif encode-files --source out/countries/2 --asif-type ganc > out/countries.asif
-$ diff out/countries.asif test/resources/geo_countries_columnar.asif
+$ diff out/countries.asif test/resources/countries.asif
 ```
