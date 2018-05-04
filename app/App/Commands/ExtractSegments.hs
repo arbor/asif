@@ -4,8 +4,11 @@ module App.Commands.ExtractSegments where
 
 import App.Commands.Options.Type
 import Arbor.File.Format.Asif
+import Arbor.File.Format.Asif.IO
 import Control.Lens
 import Control.Monad
+import Control.Monad.IO.Class       (liftIO)
+import Control.Monad.Trans.Resource (MonadResource, runResourceT)
 import Data.Function
 import Data.Monoid
 import Data.Word
@@ -27,33 +30,34 @@ parseExtractSegmentsOptions = ExtractSegmentsOptions
   <$> strOption
       (   long "source"
       <>  metavar "FILE"
+      <>  value "-"
       <>  help "Input file"
       )
   <*> strOption
       (   long "target"
-      <>  metavar "FILE"
-      <>  help "Output file"
+      <>  metavar "PATH"
+      <>  help "Output directory"
       )
 
 commandExtractSegments :: Parser (IO ())
-commandExtractSegments = runExtractSegments <$> parseExtractSegmentsOptions
+commandExtractSegments = runResourceT . runExtractSegments <$> parseExtractSegmentsOptions
 
-runExtractSegments :: ExtractSegmentsOptions -> IO ()
+runExtractSegments :: MonadResource m => ExtractSegmentsOptions -> m ()
 runExtractSegments opt = do
-  h <- IO.openFile (opt ^. L.source) IO.ReadMode
-  contents <- LBS.hGetContents h
+  (_, hIn) <- openFileOrStd (opt ^. L.source) IO.ReadMode
+  contents <- liftIO $ LBS.hGetContents hIn
   -- TODO pass in magic
   case extractSegments magic contents of
     Left error -> do
-      IO.hPutStrLn IO.stderr $ "Error occured: " <> error
+      liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> error
       return ()
     Right segments -> do
       let targetPath = opt ^. L.target
 
-      IO.hPutStrLn IO.stderr $ "Writing to: " <> targetPath
+      liftIO $ IO.hPutStrLn IO.stderr $ "Writing to: " <> targetPath
 
-      createDirectoryIfMissing True targetPath
+      liftIO $ createDirectoryIfMissing True targetPath
 
       forM_ (zip [0..] segments) $ \(i :: Int, segment) ->
-        LBS.writeFile (targetPath <> "/" <> printf "%03d" i <> ".seg") (segment ^. L.payload)
+        liftIO $ LBS.writeFile (targetPath <> "/" <> printf "%03d" i <> ".seg") (segment ^. L.payload)
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""

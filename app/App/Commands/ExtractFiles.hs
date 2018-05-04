@@ -4,10 +4,14 @@ module App.Commands.ExtractFiles where
 
 import App.Commands.Options.Type
 import Arbor.File.Format.Asif
+import Arbor.File.Format.Asif.IO
 import Control.Lens
 import Control.Monad
+import Control.Monad.IO.Class
+import Control.Monad.Trans.Resource (MonadResource, runResourceT)
 import Data.Function
 import Data.List
+import Data.Maybe
 import Data.Monoid
 import Data.Word
 import Options.Applicative
@@ -31,37 +35,42 @@ parseExtractFilesOptions = ExtractFilesOptions
   <$> strOption
       (   long "source"
       <>  metavar "FILE"
+      <>  value "-"
       <>  help "Input file"
       )
   <*> strOption
       (   long "target"
-      <>  metavar "FILE"
-      <>  help "Output file"
+      <>  metavar "PATH"
+      <>  help "Output directory"
       )
 
 commandExtractFiles :: Parser (IO ())
-commandExtractFiles = runExtractFiles <$> parseExtractFilesOptions
+commandExtractFiles = runResourceT . runExtractFiles <$> parseExtractFilesOptions
 
-runExtractFiles :: ExtractFilesOptions -> IO ()
+runExtractFiles :: MonadResource m => ExtractFilesOptions -> m ()
 runExtractFiles opt = do
-  h <- IO.openFile (opt ^. L.source) IO.ReadMode
-  contents <- LBS.hGetContents h
-  -- TODO pass in magic
-  case extractNamedSegments magic contents of
+  (_, hIn) <- openFileOrStd (opt ^. L.source) IO.ReadMode
+  contents <- liftIO $ LBS.hGetContents hIn
+  case extractSegments magic contents of
     Left error -> do
-      IO.hPutStrLn IO.stderr $ "Error occured: " <> error
+      liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> error
       return ()
-    Right namedSegments -> do
+    Right segments -> do
+      let filenames = fromMaybe "" . (^. L.meta . L.filename) <$> segments
+      let namedSegments = M.fromList $ mfilter ((/= "") . fst) (zip filenames segments)
       let targetPath = opt ^. L.target
 
-      IO.hPutStrLn IO.stderr $ "Writing to: " <> targetPath
+      liftIO $ IO.hPutStrLn IO.stderr $ "Writing to: " <> targetPath
+      liftIO $ createDirectoryIfMissing True targetPath
 
-      createDirectoryIfMissing True targetPath
-
-      forM_ (M.toList namedSegments) $ \(path, segment) -> do
-        let filename = T.pack targetPath <> "/" <> path
-        let basename = mconcat (intersperse "/" (init (T.splitOn "/" filename)))
-        IO.createDirectoryIfMissing True (T.unpack basename)
-        LBS.writeFile (T.unpack filename) (segment ^. L.payload)
+      forM_ (zip [0..] filenames) $ \(i, filename) ->
+        case M.lookup filename namedSegments of
+          Just segment -> do
+            let outFilename = T.pack targetPath <> "/" <> filename
+            let basename = mconcat (intersperse "/" (init (T.splitOn "/" outFilename)))
+            liftIO $ IO.createDirectoryIfMissing True (T.unpack basename)
+            liftIO $ LBS.writeFile (T.unpack outFilename) (segment ^. L.payload)
+          Nothing ->
+            liftIO $ IO.hPutStrLn IO.stderr $ "Segment " <> show i <> " has no filename.  Skipping"
 
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
