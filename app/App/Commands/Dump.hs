@@ -15,6 +15,7 @@ import Control.Monad.Trans.Resource    (MonadResource, runResourceT)
 import Data.Char                       (isPrint)
 import Data.Function
 import Data.List
+import Data.Maybe
 import Data.Monoid
 import Data.Text                       (Text)
 import Data.Thyme.Clock
@@ -78,13 +79,18 @@ runDump opt = do
 
   contents <- liftIO $ LBS.hGetContents hIn
 
-  case extractNamedSegments magic contents of
+  case extractSegments magic contents of
     Left error -> do
       liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> error
       return ()
-    Right namedSegments -> do
-      forM_ (M.toList namedSegments) $ \(path, segment) -> do
-        liftIO $ IO.hPutStrLn hOut $ "==== " <> T.unpack path <> " ===="
+    Right segments -> do
+      let filenames = fromMaybe "" . (^. L.meta . L.filename) <$> segments
+      let namedSegments = zip filenames segments
+
+      forM_ (zip [0..] namedSegments) $ \(i, (filename, segment)) -> do
+        if T.null filename
+          then liftIO $ IO.hPutStrLn hOut $ "==== [" <> show i <> "] ===="
+          else liftIO $ IO.hPutStrLn hOut $ "==== [" <> show i <> "] " <> T.unpack filename <> " ===="
 
         case segment ^. L.meta . L.format of
           Just (Known F.StringZ) ->
