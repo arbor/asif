@@ -57,10 +57,18 @@ The first filename must be `.asif/filenames`.
 
 The n-th filename in the segment 0 describes the n-th segment in the file.
 
-The `.asif/filenames` segment may contain a named segment `.asif/createtime`.
+### Layer 2: Additional metadata
+
+The `asif` file may contain contain a named segment `.asif/createtime`.
 If it does, this segment concatenated `Word64` numbers representing the create
 time of each file in microseconds since epoch.  If the segment does not have a
 create time, it's create time entry will be `0` instead.
+
+The `asif` file may contain contain a named segment `.asif/formats`.
+If it does, this segment concatenated null terminated strings representing the
+format of the data in the respective segments.  The `dump` command will use
+this information to choose the most appropriate way to print the data in each
+segment.
 
 ## CLI
 [CLI documentation](doc/cli.md)
