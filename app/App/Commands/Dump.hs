@@ -55,6 +55,7 @@ parseDumpOptions = DumpOptions
   <$> strOption
       (   long "source"
       <>  metavar "FILE"
+      <>  value "-"
       <>  help "Input file"
       )
   <*> strOption
@@ -72,9 +73,10 @@ showTime = formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S %Z"))
 
 runDump :: MonadResource m => DumpOptions -> m ()
 runDump opt = do
-  h <- liftIO $ IO.openFile (opt ^. L.source) IO.ReadMode
-  contents <- liftIO $ LBS.hGetContents h
+  (_, hIn) <- openFileOrStd (opt ^. L.source) IO.ReadMode
   (_, hOut) <- openFileOrStd (opt ^. L.target) IO.WriteMode
+
+  contents <- liftIO $ LBS.hGetContents hIn
 
   case extractNamedSegments magic contents of
     Left error -> do

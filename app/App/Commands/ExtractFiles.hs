@@ -4,6 +4,7 @@ module App.Commands.ExtractFiles where
 
 import App.Commands.Options.Type
 import Arbor.File.Format.Asif
+import Arbor.File.Format.Asif.IO
 import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class
@@ -33,6 +34,7 @@ parseExtractFilesOptions = ExtractFilesOptions
   <$> strOption
       (   long "source"
       <>  metavar "FILE"
+      <>  value "-"
       <>  help "Input file"
       )
   <*> strOption
@@ -46,8 +48,8 @@ commandExtractFiles = runResourceT . runExtractFiles <$> parseExtractFilesOption
 
 runExtractFiles :: MonadResource m => ExtractFilesOptions -> m ()
 runExtractFiles opt = do
-  h <- liftIO $ IO.openFile (opt ^. L.source) IO.ReadMode
-  contents <- liftIO $ LBS.hGetContents h
+  (_, hIn) <- openFileOrStd (opt ^. L.source) IO.ReadMode
+  contents <- liftIO $ LBS.hGetContents hIn
   case extractNamedSegments magic contents of
     Left error -> do
       liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> error
