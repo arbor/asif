@@ -92,6 +92,7 @@ lookupValue feed 16778240 names
 n.b. that `names` is a lens provided for each feed. Other lenses may be provided that would look values up within the corresponding feed segment.
 
 ## CLI
+[CLI documentation](doc/cli.md)
 
 ### Inpecting segments in an ASIF file
 
