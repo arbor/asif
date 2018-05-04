@@ -31,8 +31,8 @@ parseExtractSegmentsOptions = ExtractSegmentsOptions
       )
   <*> strOption
       (   long "target"
-      <>  metavar "FILE"
-      <>  help "Output file"
+      <>  metavar "PATH"
+      <>  help "Output directory"
       )
 
 commandExtractSegments :: Parser (IO ())

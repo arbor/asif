@@ -10,7 +10,7 @@ import Conduit
 import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class                    (liftIO)
-import Control.Monad.Trans.Resource
+import Control.Monad.Trans.Resource              (MonadResource, runResourceT)
 import Data.Function
 import Data.List
 import Data.Maybe
@@ -54,26 +54,23 @@ parseEncodeFilesOptions = EncodeFilesOptions
       )
 
 commandEncodeFiles :: Parser (IO ())
-commandEncodeFiles = runEncodeFiles <$> parseEncodeFilesOptions
+commandEncodeFiles = runResourceT . runEncodeFiles <$> parseEncodeFilesOptions
 
-runEncodeFiles :: EncodeFilesOptions -> IO ()
+runEncodeFiles :: MonadResource m => EncodeFilesOptions -> m ()
 runEncodeFiles opt = do
   let sourcePath = opt ^. L.source
-  filenamesContents <- BS.readFile (sourcePath <> "/.asif/filenames")
+  filenamesContents <- liftIO $ BS.readFile (sourcePath <> "/.asif/filenames")
   let filenames = mfilter (/= "") $ T.decodeUtf8 <$> BS.split 0 filenamesContents
 
-  runResourceT $ do
-    handles <- forM filenames $ \filename -> do
-      h <- liftIO $ IO.openFile (sourcePath <> "/" <> T.unpack filename) IO.ReadWriteMode
-      liftIO $ IO.hSeek h IO.SeekFromEnd 0
-      return h
+  handles <- forM filenames $ \filename -> do
+    h <- liftIO $ IO.openFile (sourcePath <> "/" <> T.unpack filename) IO.ReadWriteMode
+    liftIO $ IO.hSeek h IO.SeekFromEnd 0
+    return h
 
-    let contents = segmentsRawC (opt ^. L.asifType) handles
+  let contents = segmentsRawC (opt ^. L.asifType) handles
 
-    hTarget <- openTargetOrStdOut (opt ^. L.target) IO.WriteMode
+  (_, hTarget) <- openFileOrStd (opt ^. L.target) IO.WriteMode
 
-    C.runConduit $ contents .| C.sinkHandle hTarget
+  C.runConduit $ contents .| C.sinkHandle hTarget
 
-    liftIO $ IO.hFlush hTarget
-
-    return ()
+  liftIO $ IO.hFlush hTarget
