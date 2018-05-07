@@ -18,8 +18,11 @@ module Arbor.File.Format.Asif
   , segmentIdentifiers
   ) where
 
+import Arbor.File.Format.Asif.ByIndex
 import Arbor.File.Format.Asif.ByteString.Builder
 import Arbor.File.Format.Asif.Format             (Format)
+import Arbor.File.Format.Asif.Get
+import Arbor.File.Format.Asif.Search
 import Arbor.File.Format.Asif.Text
 import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever
@@ -56,34 +59,6 @@ import qualified Data.Text                     as LT
 import qualified Data.Text.Lazy                as T
 import qualified Data.Vector.Unboxed           as VU
 
-type Name = String
-type Code = (Char, Char)
-
-getMagic :: AP.Parser BS.ByteString -> Get ()
-getMagic magicParser = do
-  a <- getLazyByteString magicLength
-  case AP.parseOnly magicParser (LBS.toStrict a) of
-    Right _    -> return ()
-    Left error -> fail $ "wrong magic: \"" <> LC8.unpack a <> "\", expected: " <> error
-
-getSegmentLength :: Get Int
-getSegmentLength = fromIntegral <$> getInt64le
-
-getSegmentPosition :: Get (Int, Int)
-getSegmentPosition = (,)
-  <$> (fromIntegral <$> getInt32le)
-  <*> (fromIntegral <$> getInt32le)
-
-getSegmentPositions :: Get [(Int, Int)]
-getSegmentPositions = do
-  n <- getSegmentLength
-  replicateM n getSegmentPosition
-
-getHeader :: AP.Parser BS.ByteString -> Get [(Int, Int)]
-getHeader magicParser = do
-  getMagic magicParser
-  getSegmentPositions
-
 mkDefaultSegment :: LBS.ByteString -> Segment LBS.ByteString
 mkDefaultSegment bs = segment bs mempty
 
@@ -93,18 +68,6 @@ eitherToMaybe _         = Nothing
 
 extractFilenames :: LBS.ByteString -> [Text]
 extractFilenames bs = either (const "") id . decodeUtf8' . LBS.toStrict <$> LBS.split 0 bs
-
-newtype ByIndex a = ByIndex
-  { unByIndex :: [a]
-  } deriving (Eq, Show)
-
-instance Monoid a => Monoid (ByIndex a) where
-  mappend (ByIndex as) (ByIndex bs) = ByIndex (go as bs)
-    where go (a:as) (b:bs) = (a <> b):go as bs
-          go (a:as) bs     =  a      :go as bs
-          go    as  (b:bs) =       b :go as bs
-          go    []     []  = []
-  mempty = ByIndex []
 
 lookupSegment :: Text -> M.Map Text LBS.ByteString -> (LBS.ByteString -> [a]) -> [a]
 lookupSegment filename directory f = case M.lookup filename directory of
@@ -176,24 +139,13 @@ segmentElements' f = unfoldr step
 segmentCidrs :: LBS.ByteString -> VU.Vector Word32
 segmentCidrs = segmentElements getWord32le
 
-getCode :: Get Code
-getCode = do
-  a <- getByteString 1
-  b <- getByteString 1
-  let [a'] = C8.unpack a
-  let [b'] = C8.unpack b
-  return (a', b')
-
-getCodeMap :: LBS.ByteString -> LBS.ByteString -> M.Map Code String
+getCodeMap :: LBS.ByteString -> LBS.ByteString -> M.Map (Char, Char) String
 getCodeMap kbs vbs = segmentMap kbs getCode vbs getNullString
 
 getNameMap :: LBS.ByteString -> LBS.ByteString -> M.Map Word32 String
 getNameMap kbs vbs = segmentMap kbs getWord32le vbs getNullString
 
-getNullString :: Get String
-getNullString = LC8.unpack <$> getLazyByteStringNul
-
-segmentCodes :: LBS.ByteString -> VU.Vector Code
+segmentCodes :: LBS.ByteString -> VU.Vector (Char, Char)
 segmentCodes = segmentElements getCode
 
 segmentIdentifiers :: LBS.ByteString -> VU.Vector Word32
@@ -204,33 +156,3 @@ segmentMap ks kf vs vf = foldr (\(k, v) m -> M.insert k v m) M.empty $ zip keys 
   where
     keys = segmentElements' kf ks
     values = segmentElements' vf vs
-
-binarySearch :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> Maybe Int
-binarySearch key values = do
-  guard (not (VU.null values))
-  let idx = s 0 (VU.length values - 1)
-  guard (idx > -1)
-  return idx
-  where
-    s l h
-      | l >= h =
-        if (values VU.! h) <= key then h else -1
-      | otherwise = do
-        let m = l + (h - l) `div` 2
-        if (values VU.! m) > key then s l m
-        else do
-          let result = s (m + 1) h
-          if result == -1 then m
-          else result
-
-binarySearchExact :: (Ord a, VU.Unbox a) => a -> VU.Vector a -> Maybe Int
-binarySearchExact key values = go values key 0 (VU.length values - 1)
-  where
-    go hay needle lo hi
-      | hi < lo        = Nothing
-      | pivot > needle = go hay needle lo (mid - 1)
-      | pivot < needle = go hay needle (mid + 1) hi
-      | otherwise      = Just mid
-      where
-        mid   = lo + (hi - lo) `div` 2
-        pivot = hay VU.! mid
