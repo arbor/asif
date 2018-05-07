@@ -93,9 +93,10 @@ runDump opt = do
           else liftIO $ IO.hPutStrLn hOut $ "==== [" <> show i <> "] " <> T.unpack filename <> " ===="
 
         case segment ^. L.meta . L.format of
-          Just (Known F.StringZ) ->
-            forM_ (init (LBS.split 0 (segment ^. L.payload))) $ \bs ->
-              liftIO $ IO.hPutStrLn hOut $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
+          Just (Known F.StringZ) -> do
+            when (LBS.length (segment ^. L.payload) > 0) $
+              forM_ (init (LBS.split 0 (segment ^. L.payload))) $ \bs ->
+                liftIO $ IO.hPutStrLn hOut $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
           Just (Known (F.Repeat n F.Char)) ->
             forM_ (LBS.chunkBy (fromIntegral n) (segment ^. L.payload)) $ \bs ->
               liftIO $ IO.hPutStrLn hOut $ T.unpack (T.decodeUtf8 (LBS.toStrict bs))
