@@ -9,24 +9,19 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource (MonadResource, runResourceT)
-import Data.Function
 import Data.List
 import Data.Maybe
 import Data.Monoid
-import Data.Word
 import Options.Applicative
 import System.Directory
-import Text.Printf
 
 import qualified App.Commands.Options.Lens   as L
 import qualified Arbor.File.Format.Asif.Lens as L
 import qualified Data.Attoparsec.ByteString  as AP
 import qualified Data.ByteString             as BS
 import qualified Data.ByteString.Lazy        as LBS
-import qualified Data.ByteString.Lazy.Char8  as LBSC
 import qualified Data.Map                    as M
 import qualified Data.Text                   as T
-import qualified Data.Vector.Storable        as DVS
 import qualified System.Directory            as IO
 import qualified System.IO                   as IO
 
@@ -52,8 +47,8 @@ runExtractFiles opt = do
   (_, hIn) <- openFileOrStd (opt ^. L.source) IO.ReadMode
   contents <- liftIO $ LBS.hGetContents hIn
   case extractSegments magic contents of
-    Left error -> do
-      liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> error
+    Left errorMessage -> do
+      liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> errorMessage
       return ()
     Right segments -> do
       let filenames = fromMaybe "" . (^. L.meta . L.filename) <$> segments
@@ -63,7 +58,7 @@ runExtractFiles opt = do
       liftIO $ IO.hPutStrLn IO.stderr $ "Writing to: " <> targetPath
       liftIO $ createDirectoryIfMissing True targetPath
 
-      forM_ (zip [0..] filenames) $ \(i, filename) ->
+      forM_ (zip [0..] filenames) $ \(i :: Int, filename) ->
         case M.lookup filename namedSegments of
           Just segment -> do
             let outFilename = T.pack targetPath <> "/" <> filename

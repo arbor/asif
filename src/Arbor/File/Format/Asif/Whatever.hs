@@ -1,16 +1,11 @@
 module Arbor.File.Format.Asif.Whatever where
 
-import Control.Applicative
-import Data.Either
 import Data.Text                       (Text)
-import GHC.Base
 import GHC.Read
 import Text.ParserCombinators.ReadP    as P
 import Text.ParserCombinators.ReadPrec
 
 import qualified Data.Text                       as T
-import qualified Data.Text.Encoding              as T
-import qualified Text.ParserCombinators.ReadP    as P
 import qualified Text.ParserCombinators.ReadPrec as R
 
 data Whatever a = Known a | Unknown Text deriving Eq

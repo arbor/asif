@@ -13,27 +13,21 @@ import Control.Monad
 import Control.Monad.IO.Class          (liftIO)
 import Control.Monad.Trans.Resource    (MonadResource, runResourceT)
 import Data.Char                       (isPrint)
-import Data.Function
 import Data.List
 import Data.Maybe
 import Data.Monoid
-import Data.Text                       (Text)
 import Data.Thyme.Clock
-import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
+import Data.Thyme.Clock.POSIX          (POSIXTime)
 import Data.Thyme.Format               (formatTime)
 import Data.Thyme.Time.Core
-import Data.Word
 import HaskellWorks.Data.Bits.BitShow
 import Numeric                         (showHex)
 import Options.Applicative
-import System.Directory
 import System.Locale                   (defaultTimeLocale, iso8601DateFormat)
-import Text.Printf
 
 import qualified App.Commands.Options.Lens              as L
 import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
 import qualified Arbor.File.Format.Asif.Format          as F
-import qualified Arbor.File.Format.Asif.IO              as MIO
 import qualified Arbor.File.Format.Asif.Lens            as L
 import qualified Data.Attoparsec.ByteString             as AP
 import qualified Data.Binary                            as G
@@ -41,11 +35,8 @@ import qualified Data.Binary.Get                        as G
 import qualified Data.ByteString                        as BS
 import qualified Data.ByteString.Lazy                   as LBS
 import qualified Data.ByteString.Lazy.Char8             as LBSC
-import qualified Data.Map                               as M
 import qualified Data.Text                              as T
 import qualified Data.Text.Encoding                     as T
-import qualified Data.Vector.Storable                   as DVS
-import qualified System.Directory                       as IO
 import qualified System.IO                              as IO
 
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
@@ -80,14 +71,14 @@ runDump opt = do
   contents <- liftIO $ LBS.hGetContents hIn
 
   case extractSegments magic contents of
-    Left error -> do
-      liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> error
+    Left errorMessage -> do
+      liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> errorMessage
       return ()
     Right segments -> do
       let filenames = fromMaybe "" . (^. L.meta . L.filename) <$> segments
       let namedSegments = zip filenames segments
 
-      forM_ (zip [0..] namedSegments) $ \(i, (filename, segment)) -> do
+      forM_ (zip [0..] namedSegments) $ \(i :: Int, (filename, segment)) -> do
         if T.null filename
           then liftIO $ IO.hPutStrLn hOut $ "==== [" <> show i <> "] ===="
           else liftIO $ IO.hPutStrLn hOut $ "==== [" <> show i <> "] " <> T.unpack filename <> " ===="
@@ -152,9 +143,9 @@ runDump opt = do
           Just (Known F.BitString) ->
             liftIO $ IO.hPutStrLn hOut (bitShow (segment ^. L.payload))
           _ ->
-            forM_ (zip (LBS.chunkBy 16 (segment ^. L.payload)) [0, 16..]) $ \(bs, i) -> do
+            forM_ (zip (LBS.chunkBy 16 (segment ^. L.payload)) [0 :: Int, 16..]) $ \(bs, j) -> do
               let bytes = mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))
-              liftIO $ IO.hPutStr hOut $ reverse $ take 8 $ reverse $ ("0000000" ++) $ showHex i ""
+              liftIO $ IO.hPutStr hOut $ reverse $ take 8 $ reverse $ ("0000000" ++) $ showHex j ""
               liftIO $ IO.hPutStr hOut "  "
               liftIO $ IO.hPutStr hOut $ bytes <> replicate (47 - length bytes) ' '
               liftIO $ IO.hPutStr hOut "  "

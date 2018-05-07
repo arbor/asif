@@ -25,7 +25,7 @@ hGetAndResetOffset h = do
   liftIO $ hSeek  h AbsoluteSeek 0
   return (fromIntegral offset)
 
-openFileOrStd :: (MonadResource m, MonadIO m) => FilePath -> IO.IOMode -> m (ReleaseKey, IO.Handle)
+openFileOrStd :: MonadResource m => FilePath -> IO.IOMode -> m (ReleaseKey, IO.Handle)
 openFileOrStd "-" IO.WriteMode = allocate (return IO.stdout) (const (return ()))
 openFileOrStd "-" IO.ReadMode = allocate (return IO.stdin) (const (return ()))
 openFileOrStd filePath ioMode = allocate

@@ -3,13 +3,8 @@ module Arbor.File.Format.Asif.Type where
 import Arbor.File.Format.Asif.Format   (Format)
 import Arbor.File.Format.Asif.Maybe
 import Arbor.File.Format.Asif.Whatever
-import Data.Monoid
 import Data.Text                       (Text)
-import Data.Thyme
-import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
-
-import qualified Arbor.File.Format.Asif.Format as F
-import qualified System.IO                     as IO
+import Data.Thyme.Clock.POSIX          (POSIXTime)
 
 data SegmentMeta = SegmentMeta
   { _segmentMetaCreateTime :: Maybe POSIXTime
