@@ -48,14 +48,17 @@ library:
   source-dirs: src
   exposed-modules:
     - Arbor.File.Format.Asif
+    - Arbor.File.Format.Asif.ByIndex
     - Arbor.File.Format.Asif.ByteString
     - Arbor.File.Format.Asif.ByteString.Builder
     - Arbor.File.Format.Asif.ByteString.Lazy
     - Arbor.File.Format.Asif.Data.Ip
     - Arbor.File.Format.Asif.Data.Read
     - Arbor.File.Format.Asif.Format
+    - Arbor.File.Format.Asif.Get
     - Arbor.File.Format.Asif.IO
     - Arbor.File.Format.Asif.Lens
+    - Arbor.File.Format.Asif.Search
     - Arbor.File.Format.Asif.Type
     - Arbor.File.Format.Asif.Whatever
 
