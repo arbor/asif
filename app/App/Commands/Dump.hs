@@ -4,9 +4,9 @@
 module App.Commands.Dump where
 
 import App.Commands.Options.Type
-import Arbor.File.Format.Asif
 import Arbor.File.Format.Asif.Data.Ip
 import Arbor.File.Format.Asif.IO
+import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Whatever
 import Control.Lens
 import Control.Monad

@@ -5,10 +5,11 @@ module App.Commands.ExtractFiles where
 import App.Commands.Options.Type
 import Arbor.File.Format.Asif
 import Arbor.File.Format.Asif.IO
+import Arbor.File.Format.Asif.Segment
 import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class
-import Control.Monad.Trans.Resource (MonadResource, runResourceT)
+import Control.Monad.Trans.Resource   (MonadResource, runResourceT)
 import Data.List
 import Data.Maybe
 import Data.Monoid

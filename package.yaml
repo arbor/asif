@@ -54,11 +54,13 @@ library:
     - Arbor.File.Format.Asif.ByteString.Lazy
     - Arbor.File.Format.Asif.Data.Ip
     - Arbor.File.Format.Asif.Data.Read
+    - Arbor.File.Format.Asif.Extract
     - Arbor.File.Format.Asif.Format
     - Arbor.File.Format.Asif.Get
     - Arbor.File.Format.Asif.IO
     - Arbor.File.Format.Asif.Lens
     - Arbor.File.Format.Asif.Lookup
+    - Arbor.File.Format.Asif.Segment
     - Arbor.File.Format.Asif.Type
     - Arbor.File.Format.Asif.Whatever
   ghc-options:

@@ -4,11 +4,13 @@ module App.Commands.ExtractSegments where
 
 import App.Commands.Options.Type
 import Arbor.File.Format.Asif
+import Arbor.File.Format.Asif.Extract
 import Arbor.File.Format.Asif.IO
+import Arbor.File.Format.Asif.Segment
 import Control.Lens
 import Control.Monad
-import Control.Monad.IO.Class       (liftIO)
-import Control.Monad.Trans.Resource (MonadResource, runResourceT)
+import Control.Monad.IO.Class         (liftIO)
+import Control.Monad.Trans.Resource   (MonadResource, runResourceT)
 import Data.Function
 import Data.Monoid
 import Data.Word
