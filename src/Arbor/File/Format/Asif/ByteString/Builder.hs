@@ -7,7 +7,6 @@ module Arbor.File.Format.Asif.ByteString.Builder
   , magicLength
   ) where
 
-import Arbor.File.Format.Asif.Text
 import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever
 import Conduit
@@ -19,25 +18,21 @@ import Data.Conduit                    (Source)
 import Data.Int
 import Data.Maybe
 import Data.Monoid
-import Data.Text                       (Text)
 import Data.Thyme.Clock
 import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
 import Data.Word
 
-import qualified Arbor.File.Format.Asif.ByteString as BS
-import qualified Arbor.File.Format.Asif.Format     as F
-import qualified Arbor.File.Format.Asif.IO         as IO
-import qualified Arbor.File.Format.Asif.Lens       as L
-import qualified Data.ByteString                   as BS
-import qualified Data.ByteString.Builder           as B
-import qualified Data.ByteString.Lazy              as LBS
-import qualified Data.ByteString.Lazy.Char8        as LC8
-import qualified Data.Conduit.List                 as CL
-import qualified Data.Text                         as T
-import qualified Data.Text.Encoding                as T
-import qualified GHC.IO.Handle                     as IO
-import qualified System.IO                         as IO hiding (openTempFile)
-import qualified System.IO.Temp                    as IO
+import qualified Arbor.File.Format.Asif.Format as F
+import qualified Arbor.File.Format.Asif.IO     as IO
+import qualified Arbor.File.Format.Asif.Lens   as L
+import qualified Data.ByteString               as BS
+import qualified Data.ByteString.Builder       as B
+import qualified Data.ByteString.Lazy          as LBS
+import qualified Data.ByteString.Lazy.Char8    as LC8
+import qualified Data.Conduit.List             as CL
+import qualified Data.Text.Encoding            as T
+import qualified GHC.IO.Handle                 as IO
+import qualified System.IO.Temp                as IO
 
 makeMagic :: String -> Builder
 makeMagic c = B.lazyByteString (magicString c)

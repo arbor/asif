@@ -4,15 +4,12 @@ module Arbor.File.Format.AsifSpec
 ( spec
 ) where
 
-import Arbor.File.Format.Asif
-import Data.Semigroup              ((<>))
-import Data.Word                   (Word32)
+import Arbor.File.Format.Asif.Lookup
+import Data.Word                     (Word32)
 import HaskellWorks.Hspec.Hedgehog
-import Hedgehog                    (forAll, property, (===))
-import System.IO.Unsafe
+import Hedgehog
 import Test.Hspec
 
-import qualified Data.Map.Strict     as M
 import qualified Data.Vector.Unboxed as VU
 
 spec :: Spec
