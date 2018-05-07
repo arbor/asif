@@ -11,7 +11,7 @@ module Arbor.File.Format.Asif.ByIndex
 import Arbor.File.Format.Asif.ByteString.Builder
 import Arbor.File.Format.Asif.Format             (Format)
 import Arbor.File.Format.Asif.Get
-import Arbor.File.Format.Asif.Search
+import Arbor.File.Format.Asif.Lookup
 import Arbor.File.Format.Asif.Text
 import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever

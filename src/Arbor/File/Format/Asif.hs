@@ -22,7 +22,7 @@ import Arbor.File.Format.Asif.ByIndex
 import Arbor.File.Format.Asif.ByteString.Builder
 import Arbor.File.Format.Asif.Format             (Format)
 import Arbor.File.Format.Asif.Get
-import Arbor.File.Format.Asif.Search
+import Arbor.File.Format.Asif.Lookup
 import Arbor.File.Format.Asif.Text
 import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever
@@ -68,11 +68,6 @@ eitherToMaybe _         = Nothing
 
 extractFilenames :: LBS.ByteString -> [Text]
 extractFilenames bs = either (const "") id . decodeUtf8' . LBS.toStrict <$> LBS.split 0 bs
-
-lookupSegment :: Text -> M.Map Text LBS.ByteString -> (LBS.ByteString -> [a]) -> [a]
-lookupSegment filename directory f = case M.lookup filename directory of
-  Just bs -> f bs
-  Nothing -> []
 
 extractTimes :: LBS.ByteString -> [POSIXTime]
 extractTimes = ((^. from microseconds) <$>) <$> G.runGet go

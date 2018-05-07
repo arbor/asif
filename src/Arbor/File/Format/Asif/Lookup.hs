@@ -1,4 +1,4 @@
-module Arbor.File.Format.Asif.Search where
+module Arbor.File.Format.Asif.Lookup where
 
 import Arbor.File.Format.Asif.ByteString.Builder
 import Arbor.File.Format.Asif.Format             (Format)
@@ -68,3 +68,9 @@ binarySearchExact key values = go values key 0 (VU.length values - 1)
       where
         mid   = lo + (hi - lo) `div` 2
         pivot = hay VU.! mid
+
+lookupSegment :: Text -> M.Map Text LBS.ByteString -> (LBS.ByteString -> [a]) -> [a]
+lookupSegment filename directory f = case M.lookup filename directory of
+  Just bs -> f bs
+  Nothing -> []
+
