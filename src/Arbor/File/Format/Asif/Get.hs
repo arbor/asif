@@ -15,8 +15,8 @@ getMagic :: AP.Parser BS.ByteString -> Get ()
 getMagic magicParser = do
   a <- getLazyByteString magicLength
   case AP.parseOnly magicParser (LBS.toStrict a) of
-    Right _    -> return ()
-    Left error -> fail $ "wrong magic: \"" <> LC8.unpack a <> "\", expected: " <> error
+    Right _           -> return ()
+    Left errorMessage -> fail $ "wrong magic: \"" <> LC8.unpack a <> "\", expected: " <> errorMessage
 
 getSegmentLength :: Get Int
 getSegmentLength = fromIntegral <$> getInt64le

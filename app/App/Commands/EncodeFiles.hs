@@ -3,7 +3,6 @@
 module App.Commands.EncodeFiles where
 
 import App.Commands.Options.Type
-import Arbor.File.Format.Asif
 import Arbor.File.Format.Asif.ByteString.Builder
 import Arbor.File.Format.Asif.IO
 import Conduit
@@ -11,9 +10,6 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class                    (liftIO)
 import Control.Monad.Trans.Resource              (MonadResource, runResourceT)
-import Data.Function
-import Data.List
-import Data.Maybe
 import Data.Monoid
 import Options.Applicative
 

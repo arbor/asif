@@ -5,6 +5,7 @@ module Arbor.File.Format.Asif.ByteString.BuilderSpec
   ) where
 
 import Arbor.File.Format.Asif.ByteString.Builder
+import Arbor.File.Format.Asif.Segment
 import Conduit
 import Control.Lens
 import HaskellWorks.Hspec.Hedgehog
@@ -55,6 +56,6 @@ spec = describe "App.ByteString.Lazy.Builder" $ do
 
     _ <- forAll $ pure $ LBS.unpack contents
 
-    let Right segments = C.extractSegments (AP.string "seg:wxyz") contents
+    let Right segments = extractSegments (AP.string "seg:wxyz") contents
 
     ((^. L.payload) <$> segments) === [b1, b2, b3]

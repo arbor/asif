@@ -3,6 +3,7 @@ module Arbor.File.Format.Asif.Type where
 import Arbor.File.Format.Asif.Format   (Format)
 import Arbor.File.Format.Asif.Maybe
 import Arbor.File.Format.Asif.Whatever
+import Data.Semigroup
 import Data.Text                       (Text)
 import Data.Thyme.Clock.POSIX          (POSIXTime)
 
@@ -12,12 +13,15 @@ data SegmentMeta = SegmentMeta
   , _segmentMetaFormat     :: Maybe (Whatever Format)
   } deriving (Eq, Show)
 
-instance Monoid SegmentMeta where
-  a `mappend` b =  SegmentMeta
+instance Semigroup SegmentMeta where
+  a <> b =  SegmentMeta
     { _segmentMetaCreateTime = _segmentMetaCreateTime a `secondJust` _segmentMetaCreateTime b
     , _segmentMetaFilename   = _segmentMetaFilename   a `secondJust` _segmentMetaFilename   b
     , _segmentMetaFormat     = _segmentMetaFormat     a `secondJust` _segmentMetaFormat     b
     }
+
+instance Monoid SegmentMeta where
+  mappend = (<>)
   mempty = SegmentMeta
     { _segmentMetaCreateTime = Nothing
     , _segmentMetaFilename   = Nothing

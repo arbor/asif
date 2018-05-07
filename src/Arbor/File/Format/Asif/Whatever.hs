@@ -12,7 +12,7 @@ data Whatever a = Known a | Unknown Text deriving Eq
 
 instance Show a => Show (Whatever a) where
   showsPrec n (Known a)   = showsPrec n a
-  showsPrec n (Unknown t) = (T.unpack t ++)
+  showsPrec _ (Unknown t) = (T.unpack t ++)
 
 showWhatever :: Show a => Whatever a -> String
 showWhatever (Known a)   = show a
