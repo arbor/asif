@@ -3,7 +3,6 @@
 module App.Commands.ExtractFiles where
 
 import App.Commands.Options.Type
-import Arbor.File.Format.Asif
 import Arbor.File.Format.Asif.IO
 import Arbor.File.Format.Asif.Segment
 import Control.Lens
