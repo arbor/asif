@@ -18,6 +18,7 @@ import Data.Conduit                    (Source)
 import Data.Int
 import Data.Maybe
 import Data.Monoid
+import Data.String
 import Data.Thyme.Clock
 import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
 import Data.Word
@@ -37,7 +38,7 @@ import qualified System.IO.Temp                as IO
 makeMagic :: String -> Builder
 makeMagic c = B.lazyByteString (magicString c)
 
-magicPrefix :: LBS.ByteString
+magicPrefix :: IsString a => a
 magicPrefix = "seg:"
 
 -- magic file identifier for segmented gan feeds.
@@ -46,7 +47,7 @@ magicString :: String -> LC8.ByteString
 magicString s = if LBS.length truncatedMagic < LBS.length rawMagic
   then truncatedMagic
   else error $ "Magic length of " <> show (LC8.unpack truncatedMagic) <> " cannot be greater than " <> show magicLength
-  where rawMagic        = LC8.pack "seg:" <> LC8.pack s <> LBS.replicate 12 0
+  where rawMagic        = LC8.pack magicPrefix <> LC8.pack s <> LBS.replicate 12 0
         truncatedMagic  = LBS.take magicLength rawMagic
 
 magicLength :: Int64
@@ -57,9 +58,6 @@ padding64 s = (8 - s) `mod` 8
 
 withSize :: LBS.ByteString -> (Int64, LBS.ByteString)
 withSize bs = (LBS.length bs, bs)
-
-versionLength :: Int64
-versionLength = fromIntegral $ finiteBitSize (0 :: Word64) `quot` 8
 
 headerLen :: Int64 -> Int64
 headerLen n = w64 + magicLength + n * w64
