@@ -6,7 +6,6 @@ module Arbor.File.Format.Asif.Segment
   ) where
 
 import Arbor.File.Format.Asif.ByIndex
-import Arbor.File.Format.Asif.Extract
 import Arbor.File.Format.Asif.Get
 import Arbor.File.Format.Asif.Lookup
 import Arbor.File.Format.Asif.Type
@@ -17,12 +16,13 @@ import Data.Maybe
 import Data.Monoid
 import Data.Text                      (Text)
 
-import qualified Arbor.File.Format.Asif.Lens as L
-import qualified Data.Attoparsec.ByteString  as AP
-import qualified Data.ByteString             as BS
-import qualified Data.ByteString.Lazy        as LBS
-import qualified Data.ByteString.Lazy.Char8  as LC8
-import qualified Data.Map.Strict             as M
+import qualified Arbor.File.Format.Asif.Extract as E
+import qualified Arbor.File.Format.Asif.Lens    as L
+import qualified Data.Attoparsec.ByteString     as AP
+import qualified Data.ByteString                as BS
+import qualified Data.ByteString.Lazy           as LBS
+import qualified Data.ByteString.Lazy.Char8     as LC8
+import qualified Data.Map.Strict                as M
 
 mkDefaultSegment :: LBS.ByteString -> Segment LBS.ByteString
 mkDefaultSegment bs = segment bs mempty
@@ -33,14 +33,14 @@ extractSegments magicParser bs = do
   case bss of
     (as:_) -> if ".asif/filenames\0" `LBS.isPrefixOf` as
       then do
-        let filenames     = extractFilenames as
+        let filenames     = E.filenames as
         let namedSegments = M.fromList (zip filenames bss)
 
         let metas = mempty
               <> ByIndex (replicate (length bss) mempty)
               <> ByIndex (metaFilename    <$> filenames)
-              <> ByIndex (metaCreateTime  <$> lookupSegment ".asif/createtimes" namedSegments extractTimes)
-              <> ByIndex (metaMaybeFormat <$> lookupSegment ".asif/formats"     namedSegments extractFormats)
+              <> ByIndex (metaCreateTime  <$> lookupSegment ".asif/createtimes" namedSegments E.times)
+              <> ByIndex (metaMaybeFormat <$> lookupSegment ".asif/formats"     namedSegments E.formats)
 
         return $ uncurry segment <$> zip bss (unByIndex metas)
       else return (mkDefaultSegment <$> bss)
