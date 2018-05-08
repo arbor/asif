@@ -5,14 +5,15 @@ import Control.Lens
 import Control.Monad
 import Data.Binary.Get
 import Data.Monoid
+import Data.Text                                 (Text)
 import Data.Thyme.Clock                          (microseconds)
 import Data.Thyme.Clock.POSIX                    (POSIXTime)
 
 import qualified Data.Attoparsec.ByteString as AP
 import qualified Data.ByteString            as BS
-import qualified Data.ByteString.Char8      as C8
 import qualified Data.ByteString.Lazy       as LBS
 import qualified Data.ByteString.Lazy.Char8 as LC8
+import qualified Data.Text.Encoding         as T
 
 getMagic :: AP.Parser BS.ByteString -> Get ()
 getMagic magicParser = do
@@ -39,19 +40,8 @@ getHeader magicParser = do
   getMagic magicParser
   getSegmentPositions
 
-getCode :: Get (Char, Char)
-getCode = do
-  a <- getByteString 1
-  b <- getByteString 1
-  let [a'] = C8.unpack a
-  let [b'] = C8.unpack b
-  return (a', b')
-
-getNullString :: Get String
-getNullString = LC8.unpack <$> getLazyByteStringNul
-
 getTimeMicro64 :: Get POSIXTime
 getTimeMicro64 = (^. from microseconds) <$> getInt64le
 
-getStringZ :: Get BS.ByteString
-getStringZ = LBS.toStrict <$> getLazyByteStringNul
+getTextUtf8Z :: Get Text
+getTextUtf8Z = T.decodeUtf8 . LBS.toStrict <$> getLazyByteStringNul

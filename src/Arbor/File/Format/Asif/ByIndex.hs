@@ -9,15 +9,20 @@ module Arbor.File.Format.Asif.ByIndex
 
 import Data.Monoid
 
+import qualified Data.Semigroup as S
+
 newtype ByIndex a = ByIndex
   { unByIndex :: [a]
   } deriving (Eq, Show)
 
-instance Monoid a => Monoid (ByIndex a) where
-  mappend (ByIndex as) (ByIndex bs) = ByIndex (appendByIndex as bs)
+instance (Monoid a, S.Semigroup a) => S.Semigroup (ByIndex a) where
+  ByIndex as <> ByIndex bs = ByIndex (appendByIndex as bs)
+
+instance (Monoid a, S.Semigroup a) => Monoid (ByIndex a) where
+  mappend = (S.<>)
   mempty = ByIndex []
 
-appendByIndex :: Monoid a => [a] -> [a] -> [a]
+appendByIndex :: (Monoid a, S.Semigroup a) => [a] -> [a] -> [a]
 appendByIndex (a:as) (b:bs) = (a <> b):appendByIndex as bs
 appendByIndex (a:as) bs     =  a      :appendByIndex as bs
 appendByIndex    as  (b:bs) =       b :appendByIndex as bs
