@@ -1,9 +1,12 @@
 module Arbor.File.Format.Asif.Get where
 
 import Arbor.File.Format.Asif.ByteString.Builder
+import Control.Lens
 import Control.Monad
 import Data.Binary.Get
 import Data.Monoid
+import Data.Thyme.Clock                          (microseconds)
+import Data.Thyme.Clock.POSIX                    (POSIXTime)
 
 import qualified Data.Attoparsec.ByteString as AP
 import qualified Data.ByteString            as BS
@@ -46,3 +49,12 @@ getCode = do
 
 getNullString :: Get String
 getNullString = LC8.unpack <$> getLazyByteStringNul
+
+getTimeMicro64 :: Get POSIXTime
+getTimeMicro64 = (^. from microseconds) <$> getInt64le
+
+getStringZ :: Get BS.ByteString
+getStringZ = do
+  bs <- getLazyByteStringNul
+  _ <- getWord8 -- Drop null terminator
+  return (LBS.toStrict bs)
