@@ -17,6 +17,7 @@ import Data.Monoid
 import Data.Text                      (Text)
 
 import qualified Arbor.File.Format.Asif.Extract as E
+import qualified Arbor.File.Format.Asif.Get     as G
 import qualified Arbor.File.Format.Asif.Lens    as L
 import qualified Data.Attoparsec.ByteString     as AP
 import qualified Data.ByteString                as BS
@@ -33,13 +34,13 @@ extractSegments magicParser bs = do
   case bss of
     (as:_) -> if ".asif/filenames\0" `LBS.isPrefixOf` as
       then do
-        let filenames     = E.filenames as
+        let filenames     = E.list G.getTextUtf8Z as
         let namedSegments = M.fromList (zip filenames bss)
 
         let metas = mempty
               <> ByIndex (replicate (length bss) mempty)
               <> ByIndex (metaFilename    <$> filenames)
-              <> ByIndex (metaCreateTime  <$> lookupSegment ".asif/createtimes" namedSegments E.times)
+              <> ByIndex (metaCreateTime  <$> lookupSegment ".asif/createtimes" namedSegments (E.list G.getTimeMicro64))
               <> ByIndex (metaMaybeFormat <$> lookupSegment ".asif/formats"     namedSegments E.formats)
 
         return $ uncurry segment <$> zip bss (unByIndex metas)
