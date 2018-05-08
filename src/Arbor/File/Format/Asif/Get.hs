@@ -54,7 +54,4 @@ getTimeMicro64 :: Get POSIXTime
 getTimeMicro64 = (^. from microseconds) <$> getInt64le
 
 getStringZ :: Get BS.ByteString
-getStringZ = do
-  bs <- getLazyByteStringNul
-  _ <- getWord8 -- Drop null terminator
-  return (LBS.toStrict bs)
+getStringZ = LBS.toStrict <$> getLazyByteStringNul
