@@ -41,4 +41,3 @@ lookupSegment :: Text -> M.Map Text LBS.ByteString -> (LBS.ByteString -> [a]) ->
 lookupSegment filename directory f = case M.lookup filename directory of
   Just bs -> f bs
   Nothing -> []
-

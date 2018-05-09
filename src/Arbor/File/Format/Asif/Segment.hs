@@ -3,6 +3,7 @@ module Arbor.File.Format.Asif.Segment
   , mkDefaultSegment
   , extractSegments
   , extractNamedSegments
+  , segmentNamed
   ) where
 
 import Arbor.File.Format.Asif.ByIndex
@@ -14,7 +15,7 @@ import Control.Monad
 import Data.Binary.Get
 import Data.Maybe
 import Data.Monoid
-import Data.Text                      (Text)
+import Data.Text                      (Text, pack)
 
 import qualified Arbor.File.Format.Asif.Extract as E
 import qualified Arbor.File.Format.Asif.Get     as G
@@ -62,3 +63,8 @@ extractSegmentByteStrings magicParser bs = case runGetOrFail (getHeader magicPar
       when (LC8.length seg /= fromIntegral len) $
         fail "XXX segments not read correctly"
     return segs
+
+segmentNamed :: String -> M.Map Text (Segment LC8.ByteString) -> Either String LC8.ByteString
+segmentNamed name segments = do
+  let seg = M.lookup (pack name) segments >>= (\s -> Just (s ^. L.payload))
+  seg & maybe (Left ("Missing segment: " ++ name)) Right
