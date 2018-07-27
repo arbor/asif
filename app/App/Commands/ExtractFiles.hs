@@ -1,4 +1,6 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module App.Commands.ExtractFiles where
 
@@ -9,21 +11,20 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Trans.Resource   (MonadResource, runResourceT)
+import Data.Generics.Product.Any
 import Data.List
 import Data.Maybe
 import Data.Monoid
 import Options.Applicative
 import System.Directory
 
-import qualified App.Commands.Options.Lens   as L
-import qualified Arbor.File.Format.Asif.Lens as L
-import qualified Data.Attoparsec.ByteString  as AP
-import qualified Data.ByteString             as BS
-import qualified Data.ByteString.Lazy        as LBS
-import qualified Data.Map                    as M
-import qualified Data.Text                   as T
-import qualified System.Directory            as IO
-import qualified System.IO                   as IO
+import qualified Data.Attoparsec.ByteString as AP
+import qualified Data.ByteString            as BS
+import qualified Data.ByteString.Lazy       as LBS
+import qualified Data.Map                   as M
+import qualified Data.Text                  as T
+import qualified System.Directory           as IO
+import qualified System.IO                  as IO
 
 parseExtractFilesOptions :: Parser ExtractFilesOptions
 parseExtractFilesOptions = ExtractFilesOptions
@@ -44,16 +45,16 @@ commandExtractFiles = runResourceT . runExtractFiles <$> parseExtractFilesOption
 
 runExtractFiles :: MonadResource m => ExtractFilesOptions -> m ()
 runExtractFiles opt = do
-  (_, hIn) <- openFileOrStd (opt ^. L.source) IO.ReadMode
+  (_, hIn) <- openFileOrStd (opt ^. the @"source") IO.ReadMode
   contents <- liftIO $ LBS.hGetContents hIn
   case extractSegments magic contents of
     Left errorMessage -> do
       liftIO $ IO.hPutStrLn IO.stderr $ "Error occured: " <> errorMessage
       return ()
     Right segments -> do
-      let filenames = fromMaybe "" . (^. L.meta . L.filename) <$> segments
+      let filenames = fromMaybe "" . (^. the @"meta" . the @"filename") <$> segments
       let namedSegments = M.fromList $ mfilter ((/= "") . fst) (zip filenames segments)
-      let targetPath = opt ^. L.target
+      let targetPath = opt ^. the @"target"
 
       liftIO $ IO.hPutStrLn IO.stderr $ "Writing to: " <> targetPath
       liftIO $ createDirectoryIfMissing True targetPath
@@ -64,7 +65,7 @@ runExtractFiles opt = do
             let outFilename = T.pack targetPath <> "/" <> filename
             let basename = mconcat (intersperse "/" (init (T.splitOn "/" outFilename)))
             liftIO $ IO.createDirectoryIfMissing True (T.unpack basename)
-            liftIO $ LBS.writeFile (T.unpack outFilename) (segment ^. L.payload)
+            liftIO $ LBS.writeFile (T.unpack outFilename) (segment ^. the @"payload")
           Nothing ->
             liftIO $ IO.hPutStrLn IO.stderr $ "Segment " <> show i <> " has no filename.  Skipping"
 

@@ -14,7 +14,6 @@ import Test.Hspec
 
 import qualified Arbor.File.Format.Asif                    as C
 import qualified Arbor.File.Format.Asif.ByteString.Builder as LB
-import qualified Arbor.File.Format.Asif.Lens               as L
 import qualified Data.Attoparsec.ByteString                as AP
 import qualified Data.ByteString                           as BS
 import qualified Data.ByteString.Lazy                      as LBS

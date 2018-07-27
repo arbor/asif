@@ -1,5 +1,8 @@
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Arbor.File.Format.Asif.Segment
-  ( Segment(..)
+  ( Z.Segment(..)
   , mkDefaultSegment
   , extractSegments
   , extractNamedSegments
@@ -9,27 +12,27 @@ module Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.ByIndex
 import Arbor.File.Format.Asif.Get
 import Arbor.File.Format.Asif.Lookup
-import Arbor.File.Format.Asif.Type
 import Control.Lens
 import Control.Monad
 import Data.Binary.Get
+import Data.Generics.Product.Any
 import Data.Maybe
 import Data.Monoid
 import Data.Text                      (Text, pack)
 
 import qualified Arbor.File.Format.Asif.Extract as E
 import qualified Arbor.File.Format.Asif.Get     as G
-import qualified Arbor.File.Format.Asif.Lens    as L
+import qualified Arbor.File.Format.Asif.Type    as Z
 import qualified Data.Attoparsec.ByteString     as AP
 import qualified Data.ByteString                as BS
 import qualified Data.ByteString.Lazy           as LBS
 import qualified Data.ByteString.Lazy.Char8     as LC8
 import qualified Data.Map.Strict                as M
 
-mkDefaultSegment :: LBS.ByteString -> Segment LBS.ByteString
-mkDefaultSegment bs = segment bs mempty
+mkDefaultSegment :: LBS.ByteString -> Z.Segment LBS.ByteString
+mkDefaultSegment bs = Z.segment bs mempty
 
-extractSegments :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [Segment LBS.ByteString]
+extractSegments :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [Z.Segment LBS.ByteString]
 extractSegments magicParser bs = do
   bss <- extractSegmentByteStrings magicParser bs
   case bss of
@@ -40,18 +43,18 @@ extractSegments magicParser bs = do
 
         let metas = mempty
               <> ByIndex (replicate (length bss) mempty)
-              <> ByIndex (metaFilename    <$> filenames)
-              <> ByIndex (metaCreateTime  <$> lookupSegment ".asif/createtimes" namedSegments (E.list G.getTimeMicro64))
-              <> ByIndex (metaMaybeFormat <$> lookupSegment ".asif/formats"     namedSegments E.formats)
+              <> ByIndex (Z.metaFilename    <$> filenames)
+              <> ByIndex (Z.metaCreateTime  <$> lookupSegment ".asif/createtimes" namedSegments (E.list G.getTimeMicro64))
+              <> ByIndex (Z.metaMaybeFormat <$> lookupSegment ".asif/formats"     namedSegments E.formats)
 
-        return $ uncurry segment <$> zip bss (unByIndex metas)
+        return $ uncurry Z.segment <$> zip bss (unByIndex metas)
       else return (mkDefaultSegment <$> bss)
     _      -> return (mkDefaultSegment <$> bss)
 
-extractNamedSegments :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String (M.Map Text (Segment LBS.ByteString))
+extractNamedSegments :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String (M.Map Text (Z.Segment LBS.ByteString))
 extractNamedSegments magicParser bs = do
   segments <- extractSegments magicParser bs
-  let filenames = fromMaybe "" . (^. L.meta . L.filename) <$> segments
+  let filenames = fromMaybe "" . (^. the @"meta" . the @"filename") <$> segments
   return $ M.fromList $ zip filenames segments
 
 extractSegmentByteStrings :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [LBS.ByteString]
@@ -64,7 +67,7 @@ extractSegmentByteStrings magicParser bs = case runGetOrFail (getHeader magicPar
         fail "XXX segments not read correctly"
     return segs
 
-segmentNamed :: String -> M.Map Text (Segment LC8.ByteString) -> Either String LC8.ByteString
+segmentNamed :: String -> M.Map Text (Z.Segment LC8.ByteString) -> Either String LC8.ByteString
 segmentNamed name segments = do
-  let seg = M.lookup (pack name) segments >>= (\s -> Just (s ^. L.payload))
+  let seg = M.lookup (pack name) segments >>= (\s -> Just (s ^. the @"payload"))
   seg & maybe (Left ("Missing segment: " ++ name)) Right

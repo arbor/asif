@@ -1,22 +1,27 @@
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+
 module App.Commands.Options.Type where
 
+import GHC.Generics
+
 data EncodeFilesOptions = EncodeFilesOptions
-  { encodeFilesOptionsSource   :: FilePath
-  , encodeFilesOptionsTarget   :: FilePath
-  , encodeFilesOptionsAsifType :: String
-  } deriving (Eq, Show)
+  { source   :: FilePath
+  , target   :: FilePath
+  , asifType :: String
+  } deriving (Eq, Show, Generic)
 
 data ExtractFilesOptions = ExtractFilesOptions
-  { extractFilesOptionsSource :: FilePath
-  , extractFilesOptionsTarget :: FilePath
-  } deriving (Eq, Show)
+  { source :: FilePath
+  , target :: FilePath
+  } deriving (Eq, Show, Generic)
 
 data ExtractSegmentsOptions = ExtractSegmentsOptions
-  { extractSegmentsOptionsSource :: FilePath
-  , extractSegmentsOptionsTarget :: FilePath
-  } deriving (Eq, Show)
+  { source :: FilePath
+  , target :: FilePath
+  } deriving (Eq, Show, Generic)
 
 data DumpOptions = DumpOptions
-  { dumpOptionsSource :: FilePath
-  , dumpOptionsTarget :: FilePath
-  } deriving (Eq, Show)
+  { source :: FilePath
+  , target :: FilePath
+  } deriving (Eq, Show, Generic)

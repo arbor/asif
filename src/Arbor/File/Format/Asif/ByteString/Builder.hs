@@ -1,3 +1,6 @@
+{-# LANGUAGE DataKinds        #-}
+{-# LANGUAGE TypeApplications #-}
+
 module Arbor.File.Format.Asif.ByteString.Builder
   ( magicString
   , withSize
@@ -7,7 +10,6 @@ module Arbor.File.Format.Asif.ByteString.Builder
   , magicLength
   ) where
 
-import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever
 import Conduit
 import Control.Lens
@@ -15,6 +17,7 @@ import Control.Monad
 import Data.Bits
 import Data.ByteString.Builder
 import Data.Conduit                    (Source)
+import Data.Generics.Product.Any
 import Data.Int
 import Data.Maybe
 import Data.Monoid
@@ -25,7 +28,7 @@ import Data.Word
 
 import qualified Arbor.File.Format.Asif.Format as F
 import qualified Arbor.File.Format.Asif.IO     as IO
-import qualified Arbor.File.Format.Asif.Lens   as L
+import qualified Arbor.File.Format.Asif.Type   as Z
 import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Builder       as B
 import qualified Data.ByteString.Lazy          as LBS
@@ -91,7 +94,7 @@ segmentsRawC asifType handles = do
 segmentsC :: (MonadIO m, MonadResource m)
   => String
   -> Maybe POSIXTime
-  -> [Segment IO.Handle]
+  -> [Z.Segment IO.Handle]
   -> m (Source m BS.ByteString)
 segmentsC asifType maybeTimestamp metas = do
   fileTime <- maybe (liftIO getPOSIXTime) return maybeTimestamp
@@ -99,18 +102,18 @@ segmentsC asifType maybeTimestamp metas = do
   (_, _, hCreateTimes ) <- IO.openTempFile Nothing "asif-timestamps"
   (_, _, hFormats     ) <- IO.openTempFile Nothing "asif-formats"
 
-  let metaMeta        = metaCreateTime fileTime
-  let metaFilenames   = segment hFilenames    $ metaMeta <> metaFilename ".asif/filenames"   <> metaFormat (Known F.StringZ)
-  let metaCreateTimes = segment hCreateTimes  $ metaMeta <> metaFilename ".asif/createtimes" <> metaFormat (Known F.TimeMicros64LE)
-  let metaFormats     = segment hFormats      $ metaMeta <> metaFilename ".asif/formats"     <> metaFormat (Known F.StringZ)
+  let metaMeta        = Z.metaCreateTime fileTime
+  let metaFilenames   = Z.segment hFilenames    $ metaMeta <> Z.metaFilename ".asif/filenames"   <> Z.metaFormat (Known F.StringZ)
+  let metaCreateTimes = Z.segment hCreateTimes  $ metaMeta <> Z.metaFilename ".asif/createtimes" <> Z.metaFormat (Known F.TimeMicros64LE)
+  let metaFormats     = Z.segment hFormats      $ metaMeta <> Z.metaFilename ".asif/formats"     <> Z.metaFormat (Known F.StringZ)
   let moreMetas       = metaFilenames:metaCreateTimes:metaFormats:metas
 
   forM_ moreMetas $ \meta -> do
-    liftIO $ B.hPutBuilder hFilenames   $ B.byteString (meta ^. L.meta . L.filename & fromMaybe "" & T.encodeUtf8) <> B.word8 0
-    liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE $ (meta ^. L.meta . L.createTime) <&> (^. microseconds) & fromMaybe 0
-    liftIO $ B.hPutBuilder hFormats     $ B.byteString (meta ^. L.meta . L.format <&> tShowWhatever & fromMaybe "" & T.encodeUtf8) <> B.word8 0
+    liftIO $ B.hPutBuilder hFilenames   $ B.byteString (meta ^. the @"meta" . the @"filename" & fromMaybe "" & T.encodeUtf8) <> B.word8 0
+    liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE $ (meta ^. the @"meta" . the @"createTime") <&> (^. microseconds) & fromMaybe 0
+    liftIO $ B.hPutBuilder hFormats     $ B.byteString (meta ^. the @"meta" . the @"format" <&> tShowWhatever & fromMaybe "" & T.encodeUtf8) <> B.word8 0
     return ()
 
-  let source = segmentsRawC asifType ((^. L.payload) <$> moreMetas)
+  let source = segmentsRawC asifType ((^. the @"payload") <$> moreMetas)
 
   return source

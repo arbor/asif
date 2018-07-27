@@ -1,4 +1,8 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Arbor.File.Format.Asif.Format where
+
+import GHC.Generics
 
 data Format
   = Binary
@@ -18,4 +22,4 @@ data Format
   | Word16LE
   | Word32LE
   | Word64LE
-  deriving (Eq, Read, Show)
+  deriving (Eq, Read, Show, Generic)
