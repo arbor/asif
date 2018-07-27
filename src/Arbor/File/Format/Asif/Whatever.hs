@@ -1,6 +1,9 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Arbor.File.Format.Asif.Whatever where
 
 import Data.Text                       (Text)
+import GHC.Generics
 import GHC.Read
 import Text.ParserCombinators.ReadP    as P
 import Text.ParserCombinators.ReadPrec
@@ -8,7 +11,7 @@ import Text.ParserCombinators.ReadPrec
 import qualified Data.Text                       as T
 import qualified Text.ParserCombinators.ReadPrec as R
 
-data Whatever a = Known a | Unknown Text deriving Eq
+data Whatever a = Known a | Unknown Text deriving (Eq, Generic)
 
 instance Show a => Show (Whatever a) where
   showsPrec n (Known a)   = showsPrec n a

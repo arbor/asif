@@ -1,4 +1,6 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module App.Commands.EncodeFiles where
 
@@ -10,16 +12,16 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class                    (liftIO)
 import Control.Monad.Trans.Resource              (MonadResource, runResourceT)
+import Data.Generics.Product.Any
 import Data.Monoid
 import Options.Applicative
 
-import qualified App.Commands.Options.Lens as L
-import qualified Data.ByteString           as BS
-import qualified Data.Conduit              as C
-import qualified Data.Conduit.Binary       as C
-import qualified Data.Text                 as T
-import qualified Data.Text.Encoding        as T
-import qualified System.IO                 as IO
+import qualified Data.ByteString     as BS
+import qualified Data.Conduit        as C
+import qualified Data.Conduit.Binary as C
+import qualified Data.Text           as T
+import qualified Data.Text.Encoding  as T
+import qualified System.IO           as IO
 
 parseEncodeFilesOptions :: Parser EncodeFilesOptions
 parseEncodeFilesOptions = EncodeFilesOptions
@@ -45,7 +47,7 @@ commandEncodeFiles = runResourceT . runEncodeFiles <$> parseEncodeFilesOptions
 
 runEncodeFiles :: MonadResource m => EncodeFilesOptions -> m ()
 runEncodeFiles opt = do
-  let sourcePath = opt ^. L.source
+  let sourcePath = opt ^. the @"source"
   filenamesContents <- liftIO $ BS.readFile (sourcePath <> "/.asif/filenames")
   let filenames = mfilter (/= "") $ T.decodeUtf8 <$> BS.split 0 filenamesContents
 
@@ -54,9 +56,9 @@ runEncodeFiles opt = do
     liftIO $ IO.hSeek h IO.SeekFromEnd 0
     return h
 
-  let contents = segmentsRawC (opt ^. L.asifType) handles
+  let contents = segmentsRawC (opt ^. the @"asifType") handles
 
-  (_, hTarget) <- openFileOrStd (opt ^. L.target) IO.WriteMode
+  (_, hTarget) <- openFileOrStd (opt ^. the @"target") IO.WriteMode
 
   C.runConduit $ contents .| C.sinkHandle hTarget
 

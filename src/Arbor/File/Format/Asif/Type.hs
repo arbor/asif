@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+
 module Arbor.File.Format.Asif.Type where
 
 import Arbor.File.Format.Asif.Format   (Format)
@@ -6,55 +8,56 @@ import Arbor.File.Format.Asif.Whatever
 import Data.Semigroup
 import Data.Text                       (Text)
 import Data.Thyme.Clock.POSIX          (POSIXTime)
+import GHC.Generics
 
 data SegmentMeta = SegmentMeta
-  { _segmentMetaCreateTime :: Maybe POSIXTime
-  , _segmentMetaFilename   :: Maybe Text
-  , _segmentMetaFormat     :: Maybe (Whatever Format)
-  } deriving (Eq, Show)
+  { createTime :: Maybe POSIXTime
+  , filename   :: Maybe Text
+  , format     :: Maybe (Whatever Format)
+  } deriving (Eq, Show, Generic)
 
 instance Semigroup SegmentMeta where
   a <> b =  SegmentMeta
-    { _segmentMetaCreateTime = _segmentMetaCreateTime a `secondJust` _segmentMetaCreateTime b
-    , _segmentMetaFilename   = _segmentMetaFilename   a `secondJust` _segmentMetaFilename   b
-    , _segmentMetaFormat     = _segmentMetaFormat     a `secondJust` _segmentMetaFormat     b
+    { createTime = createTime a `secondJust` createTime b
+    , filename   = filename   a `secondJust` filename   b
+    , format     = format     a `secondJust` format     b
     }
 
 instance Monoid SegmentMeta where
   mappend = (<>)
   mempty = SegmentMeta
-    { _segmentMetaCreateTime = Nothing
-    , _segmentMetaFilename   = Nothing
-    , _segmentMetaFormat     = Nothing
+    { createTime = Nothing
+    , filename   = Nothing
+    , format     = Nothing
     }
 
 data Segment a = Segment
-  { _segmentMeta    :: SegmentMeta
-  , _segmentPayload :: a
-  }
+  { meta    :: SegmentMeta
+  , payload :: a
+  } deriving Generic
 
 segment :: a -> SegmentMeta -> Segment a
-segment payload meta = Segment
-  { _segmentMeta      = meta
-  , _segmentPayload   = payload
+segment payload' meta' = Segment
+  { meta      = meta'
+  , payload   = payload'
   }
 
 metaCreateTime :: POSIXTime -> SegmentMeta
 metaCreateTime time = mempty
-  { _segmentMetaCreateTime = Just time
+  { createTime = Just time
   }
 
 metaFilename :: Text -> SegmentMeta
 metaFilename filePath = mempty
-  { _segmentMetaFilename = Just filePath
+  { filename = Just filePath
   }
 
 metaFormat :: Whatever Format -> SegmentMeta
-metaFormat format = mempty
-  { _segmentMetaFormat = Just format
+metaFormat format' = mempty
+  { format = Just format'
   }
 
 metaMaybeFormat :: Maybe (Whatever Format) -> SegmentMeta
 metaMaybeFormat maybeFormat = mempty
-  { _segmentMetaFormat = maybeFormat
+  { format = maybeFormat
   }

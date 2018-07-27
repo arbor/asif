@@ -1,21 +1,21 @@
+{-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Arbor.File.Format.Asif.ByteString.BuilderSpec
   ( spec
   ) where
 
-import Arbor.File.Format.Asif.ByteString.Builder
 import Arbor.File.Format.Asif.Segment
 import Conduit
 import Control.Lens
+import Data.Generics.Product
 import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
-import System.IO                                 (openTempFile)
+import System.IO                      (openTempFile)
 import Test.Hspec
 
-import qualified Arbor.File.Format.Asif                    as C
 import qualified Arbor.File.Format.Asif.ByteString.Builder as LB
-import qualified Arbor.File.Format.Asif.Lens               as L
 import qualified Data.Attoparsec.ByteString                as AP
 import qualified Data.ByteString                           as BS
 import qualified Data.ByteString.Lazy                      as LBS
@@ -58,4 +58,4 @@ spec = describe "App.ByteString.Lazy.Builder" $ do
 
     let Right segments = extractSegments (AP.string "seg:wxyz") contents
 
-    ((^. L.payload) <$> segments) === [b1, b2, b3]
+    ((^. the @"payload") <$> segments) === [b1, b2, b3]

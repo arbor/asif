@@ -1,5 +1,5 @@
 name:                asif
-version:             1.0.0
+version:             2.0.0
 github:              "packetloop/asif"
 license:             MIT
 category:            Services
@@ -34,6 +34,7 @@ dependencies:
 - cpu
 - either
 - exceptions
+- generic-lens
 - hw-bits
 - iproute
 - lens
@@ -58,7 +59,6 @@ library:
     - Arbor.File.Format.Asif.Format
     - Arbor.File.Format.Asif.Get
     - Arbor.File.Format.Asif.IO
-    - Arbor.File.Format.Asif.Lens
     - Arbor.File.Format.Asif.Lookup
     - Arbor.File.Format.Asif.Segment
     - Arbor.File.Format.Asif.Type
