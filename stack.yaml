@@ -1,4 +1,4 @@
-resolver: lts-10.10
+resolver: lts-11.17
 
 packages:
 - .
@@ -6,14 +6,10 @@ packages:
     git: git@github.com:packetloop/arbor-ip.git
     commit: 9cea5e3c5e3eeaf767f97749b127a7495604f845
   extra-dep: true
-- location:
-    git: git@github.com:packetloop/gan-feeds-client.git
-    commit: 4574041448e1335f6b2b7c0f522b150e8ad0eff1
-  extra-dep: true
 
 extra-deps:
-- hedgehog-0.5.3
 - hw-fingertree-strict-0.1.0.3
 - hw-hspec-hedgehog-0.1.0.4
 - lazy-csv-0.5.1
 - temporary-resourcet-0.1.0.0
+- thyme-0.3.5.5

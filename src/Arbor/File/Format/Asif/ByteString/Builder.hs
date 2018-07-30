@@ -16,7 +16,6 @@ import Control.Lens
 import Control.Monad
 import Data.Bits
 import Data.ByteString.Builder
-import Data.Conduit                    (Source)
 import Data.Generics.Product.Any
 import Data.Int
 import Data.Maybe
@@ -70,7 +69,7 @@ headerLen n = w64 + magicLength + n * w64
 intersperse :: Int64 -> Int64 -> B.Builder
 intersperse a b = B.word32LE (fromIntegral a) <> B.word32LE (fromIntegral b)
 
-segmentsRawC :: MonadIO m => String -> [IO.Handle] -> Source m BS.ByteString
+segmentsRawC :: MonadIO m => String -> [IO.Handle] -> ConduitT () BS.ByteString m ()
 segmentsRawC asifType handles = do
   let segmentCount = fromIntegral $ length handles :: Int64
 
@@ -95,7 +94,7 @@ segmentsC :: (MonadIO m, MonadResource m)
   => String
   -> Maybe POSIXTime
   -> [Z.Segment IO.Handle]
-  -> m (Source m BS.ByteString)
+  -> m (ConduitT () BS.ByteString m ())
 segmentsC asifType maybeTimestamp metas = do
   fileTime <- maybe (liftIO getPOSIXTime) return maybeTimestamp
   (_, _, hFilenames   ) <- IO.openTempFile Nothing "asif-filenames"
