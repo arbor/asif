@@ -6,10 +6,6 @@ packages:
     git: git@github.com:packetloop/arbor-ip.git
     commit: 9cea5e3c5e3eeaf767f97749b127a7495604f845
   extra-dep: true
-- location:
-    git: git@github.com:packetloop/gan-feeds-client.git
-    commit: 4574041448e1335f6b2b7c0f522b150e8ad0eff1
-  extra-dep: true
 
 extra-deps:
 - hedgehog-0.5.3
