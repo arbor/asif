@@ -63,6 +63,7 @@ library:
     - Arbor.File.Format.Asif.Segment
     - Arbor.File.Format.Asif.Type
     - Arbor.File.Format.Asif.Whatever
+    - Example
   ghc-options:
     - -Wall
     - -Wcompat
