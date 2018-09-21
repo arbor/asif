@@ -6,7 +6,7 @@ import App.Commands.Dump
 import App.Commands.EncodeFiles
 import App.Commands.ExtractFiles
 import App.Commands.ExtractSegments
-import Data.Monoid
+import Data.Monoid                  ((<>))
 import Options.Applicative
 
 globalOptions :: Parser (IO ())

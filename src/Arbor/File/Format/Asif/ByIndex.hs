@@ -7,7 +7,7 @@ module Arbor.File.Format.Asif.ByIndex
   ( ByIndex(..)
   ) where
 
-import Data.Monoid
+import Data.Monoid ((<>))
 
 import qualified Data.Semigroup as S
 
@@ -22,8 +22,8 @@ instance (Monoid a, S.Semigroup a) => Monoid (ByIndex a) where
   mappend = (S.<>)
   mempty = ByIndex []
 
-appendByIndex :: (Monoid a, S.Semigroup a) => [a] -> [a] -> [a]
-appendByIndex (a:as) (b:bs) = (a <> b):appendByIndex as bs
-appendByIndex (a:as) bs     =  a      :appendByIndex as bs
-appendByIndex    as  (b:bs) =       b :appendByIndex as bs
+appendByIndex :: Monoid a => [a] -> [a] -> [a]
+appendByIndex (a:as) (b:bs) = (a `mappend` b):appendByIndex as bs
+appendByIndex (a:as) bs     =  a             :appendByIndex as bs
+appendByIndex    as  (b:bs) =              b :appendByIndex as bs
 appendByIndex    []     []  = []

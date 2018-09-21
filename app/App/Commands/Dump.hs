@@ -18,7 +18,7 @@ import Data.Char                       (isPrint)
 import Data.Generics.Product.Any
 import Data.List
 import Data.Maybe
-import Data.Monoid
+import Data.Monoid                     ((<>))
 import Data.Thyme.Clock
 import Data.Thyme.Clock.POSIX          (POSIXTime)
 import Data.Thyme.Format               (formatTime)

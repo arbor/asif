@@ -19,7 +19,7 @@ import Data.ByteString.Builder
 import Data.Generics.Product.Any
 import Data.Int
 import Data.Maybe
-import Data.Monoid
+import Data.Monoid                     ((<>))
 import Data.String
 import Data.Thyme.Clock
 import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)

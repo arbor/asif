@@ -5,7 +5,7 @@ module Arbor.File.Format.Asif.Type where
 import Arbor.File.Format.Asif.Format   (Format)
 import Arbor.File.Format.Asif.Maybe
 import Arbor.File.Format.Asif.Whatever
-import Data.Semigroup
+import Data.Semigroup                  (Semigroup, (<>))
 import Data.Text                       (Text)
 import Data.Thyme.Clock.POSIX          (POSIXTime)
 import GHC.Generics

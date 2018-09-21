@@ -14,7 +14,7 @@ import Control.Monad.Trans.Resource   (MonadResource, runResourceT)
 import Data.Generics.Product.Any
 import Data.List
 import Data.Maybe
-import Data.Monoid
+import Data.Monoid                    ((<>))
 import Options.Applicative
 import System.Directory
 

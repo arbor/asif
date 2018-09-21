@@ -12,7 +12,7 @@ import Control.Monad
 import Control.Monad.IO.Class         (liftIO)
 import Control.Monad.Trans.Resource   (MonadResource, runResourceT)
 import Data.Generics.Product.Any
-import Data.Monoid
+import Data.Monoid                    ((<>))
 import Options.Applicative
 import System.Directory
 import Text.Printf

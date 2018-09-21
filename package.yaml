@@ -36,6 +36,7 @@ dependencies:
 - exceptions
 - generic-lens
 - hw-bits
+- hw-ip
 - iproute
 - lens
 - old-locale
@@ -99,7 +100,6 @@ tests:
     - -with-rtsopts=-N
     dependencies:
     - asif
-    - arbor-ip
     - hspec
     - hedgehog
     - hw-hspec-hedgehog

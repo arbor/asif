@@ -5,22 +5,17 @@ module Gen.Feed
   , ordBy
   ) where
 
-import Arbor.Network.Ip
 import Data.Word
+import HaskellWorks.Data.Network.Ip
+import HaskellWorks.Data.Network.Ip.Internal
 import Hedgehog
 
 import qualified Hedgehog.Gen   as G
 import qualified Hedgehog.Range as R
 
-ipv4 :: MonadGen m => Word8 -> Word8 -> m IPv4
-ipv4 start stop = do
-  o1 <- w8
-  o2 <- w8
-  o3 <- w8
-  o4 <- w8
-  return $ ipFromOctets o1 o2 o3 o4
-  where
-    w8 = G.word8 (R.linear start stop)
+ipv4 :: MonadGen m => Word8 -> Word8 -> m Ipv4Address
+ipv4 start stop = Ipv4Address <$> (fourOctetsToWord32 <$> w8 <*> w8 <*> w8 <*> w8)
+  where w8 = G.word8 (R.linear start stop)
 
 feedElemIp :: MonadGen m => Range Word32 -> m Word32
 feedElemIp = G.word32

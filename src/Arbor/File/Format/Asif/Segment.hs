@@ -17,7 +17,7 @@ import Control.Monad
 import Data.Binary.Get
 import Data.Generics.Product.Any
 import Data.Maybe
-import Data.Monoid
+import Data.Monoid                    ((<>))
 import Data.Text                      (Text, pack)
 
 import qualified Arbor.File.Format.Asif.Extract as E
