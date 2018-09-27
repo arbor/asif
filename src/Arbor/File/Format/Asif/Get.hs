@@ -4,7 +4,7 @@ import Arbor.File.Format.Asif.ByteString.Builder
 import Control.Lens
 import Control.Monad
 import Data.Binary.Get
-import Data.Monoid
+import Data.Monoid                               ((<>))
 import Data.Text                                 (Text)
 import Data.Thyme.Clock                          (microseconds)
 import Data.Thyme.Clock.POSIX                    (POSIXTime)
