@@ -39,6 +39,7 @@ dependencies:
 - hw-ip
 - iproute
 - lens
+- network
 - old-locale
 - resourcet
 - temporary-resourcet

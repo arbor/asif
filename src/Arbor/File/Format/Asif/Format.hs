@@ -13,6 +13,7 @@ data Format
   | Int32LE
   | Int64LE
   | Ipv4
+  | Ipv6
   | Repeat Word Format
   | StringZ
   | Text
