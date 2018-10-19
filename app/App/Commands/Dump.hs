@@ -23,6 +23,7 @@ import Data.Thyme.Clock
 import Data.Thyme.Clock.POSIX          (POSIXTime)
 import Data.Thyme.Format               (formatTime)
 import Data.Thyme.Time.Core
+import Data.Word
 import HaskellWorks.Data.Bits.BitShow
 import Numeric                         (showHex)
 import Options.Applicative
@@ -63,6 +64,14 @@ commandDump = runResourceT . runDump <$> parseDumpOptions
 
 showTime :: FormatTime t => t -> String
 showTime = formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S %Z"))
+
+getWord32x4 :: G.Get (Word32, Word32, Word32, Word32)
+getWord32x4 = do
+  a <- G.getWord32be
+  b <- G.getWord32be
+  c <- G.getWord32be
+  d <- G.getWord32be
+  return (a, b, c, d)
 
 runDump :: MonadResource m => DumpOptions -> m ()
 runDump opt = do
@@ -107,6 +116,16 @@ runDump opt = do
               let w = G.runGet G.getWord32le (LBS.take 8 (bs <> LBS.replicate 4 0))
               let ipString = w & word32ToIpv4 & ipv4ToString
               liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w <> ")"
+          Just (Known F.Ipv6) ->
+            forM_ (LBS.chunkBy 16 (segment ^. the @"payload")) $ \bs -> do
+              let (a, b, c, d) = G.runGet getWord32x4 (LBS.take 16 (bs <> LBS.replicate 16 0))
+              if a == 0 && b == 0 && c == 0xFFFF
+                then do
+                  let ipString = d & word32ToIpv4 & ipv4ToString
+                  liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (64 - length ipString) ' ' <> "(" <> show d <> ")"
+                else do
+                  let ipString = word32x4ToIpv6 (a, b, c, d) & ipv6ToString
+                  liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (64 - length ipString) ' ' <> "(" <> show (a, b, c, d) <> ")"
           Just (Known F.Int64LE) ->
             forM_ (LBS.chunkBy 8 (segment ^. the @"payload")) $ \bs -> do
               let w = G.runGet G.getInt64le (LBS.take 8 (bs <> LBS.replicate 8 0))
