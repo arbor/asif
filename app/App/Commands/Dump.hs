@@ -14,6 +14,7 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class          (liftIO)
 import Control.Monad.Trans.Resource    (MonadResource, runResourceT)
+import Data.Bits
 import Data.Char                       (isPrint)
 import Data.Generics.Product.Any
 import Data.List
@@ -162,6 +163,10 @@ runDump opt = do
             liftIO $ LBSC.hPutStrLn hOut (segment ^. the @"payload")
           Just (Known F.BitString) ->
             liftIO $ IO.hPutStrLn hOut (bitShow (segment ^. the @"payload"))
+          Just (Known F.Bitmap) -> do
+            let word64s = G.runGet G.getWord16le <$> LBS.chunkBy 8 (segment ^. the @"payload")
+            let total1s = foldr ((+) . popCount) 0 word64s
+            liftIO $ IO.hPutStrLn hOut $ show total1s
           _ ->
             forM_ (zip (LBS.chunkBy 16 (segment ^. the @"payload")) [0 :: Int, 16..]) $ \(bs, j) -> do
               let bytes = mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))

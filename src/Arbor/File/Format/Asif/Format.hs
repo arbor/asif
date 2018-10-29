@@ -6,6 +6,7 @@ import GHC.Generics
 
 data Format
   = Binary
+  | Bitmap
   | BitString
   | Char
   | Int8
