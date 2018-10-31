@@ -163,10 +163,11 @@ runDump opt = do
             liftIO $ LBSC.hPutStrLn hOut (segment ^. the @"payload")
           Just (Known F.BitString) ->
             liftIO $ IO.hPutStrLn hOut (bitShow (segment ^. the @"payload"))
-          Just (Known F.Bitmap) -> do
-            let word64s = G.runGet G.getWord16le <$> LBS.chunkBy 8 (segment ^. the @"payload")
-            let total1s = foldr ((+) . popCount) 0 word64s
-            liftIO $ IO.hPutStrLn hOut $ show total1s
+          Just (Known F.Bitmap) ->
+            forM_ (zip [0..] (G.runGet G.getWord64le <$> LBS.chunkBy 8 (segment ^. the @"payload"))) $ \e ->
+              forM_ (bitsToW32s 0 e []) $ \w -> do
+                let ipString = w & word32ToIpv4 & ipv4ToString
+                liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w <> ")"
           _ ->
             forM_ (zip (LBS.chunkBy 16 (segment ^. the @"payload")) [0 :: Int, 16..]) $ \(bs, j) -> do
               let bytes = mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))
@@ -177,4 +178,14 @@ runDump opt = do
               liftIO $ IO.hPutStr hOut $ (\c -> if isPrint c then c else '.') <$> LBSC.unpack bs
               liftIO $ IO.hPutStrLn hOut ""
 
-  where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
+  where
+    magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
+    bitsToW32s :: Int -> (Int, Word64) -> [Word32] -> [Word32]
+    bitsToW32s bp (i, w64) acc =
+      if bp < 64 then
+        if testBit w64 (63 - bp) then
+          bitsToW32s (bp + 1) (i, w64) (acc ++ [fromIntegral $ (i * 64) + bp])
+        else
+          bitsToW32s (bp + 1) (i, w64) acc
+      else
+        acc
