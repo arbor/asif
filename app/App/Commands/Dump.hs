@@ -14,7 +14,6 @@ import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class          (liftIO)
 import Control.Monad.Trans.Resource    (MonadResource, runResourceT)
-import Data.Bits
 import Data.Char                       (isPrint)
 import Data.Generics.Product.Any
 import Data.List
@@ -26,6 +25,7 @@ import Data.Thyme.Format               (formatTime)
 import Data.Thyme.Time.Core
 import Data.Word
 import HaskellWorks.Data.Bits.BitShow
+import HaskellWorks.Data.Bits.BitWise
 import Numeric                         (showHex)
 import Options.Applicative
 import System.Locale                   (defaultTimeLocale, iso8601DateFormat)
@@ -35,6 +35,7 @@ import qualified Arbor.File.Format.Asif.Format          as F
 import qualified Data.Attoparsec.ByteString             as AP
 import qualified Data.Binary                            as G
 import qualified Data.Binary.Get                        as G
+import qualified Data.Bits                              as B
 import qualified Data.ByteString                        as BS
 import qualified Data.ByteString.Lazy                   as LBS
 import qualified Data.ByteString.Lazy.Char8             as LBSC
@@ -164,10 +165,10 @@ runDump opt = do
           Just (Known F.BitString) ->
             liftIO $ IO.hPutStrLn hOut (bitShow (segment ^. the @"payload"))
           Just (Known F.Bitmap) ->
-            forM_ (zip [0..] (G.runGet G.getWord64le <$> LBS.chunkBy 8 (segment ^. the @"payload"))) $ \e ->
-              forM_ (bitsToW32s 0 e []) $ \w -> do
-                let ipString = w & word32ToIpv4 & ipv4ToString
-                liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w <> ")"
+            forM_ (zip [0..] (G.runGet G.getWord64le <$> LBS.chunkBy 8 (segment ^. the @"payload"))) $ \(idx, w64) ->
+              forM_ (word64ToList idx w64 []) $ \w32 -> do
+                let ipString = w32 & word32ToIpv4 & ipv4ToString
+                liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w32 <> ")"
           _ ->
             forM_ (zip (LBS.chunkBy 16 (segment ^. the @"payload")) [0 :: Int, 16..]) $ \(bs, j) -> do
               let bytes = mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))
@@ -178,14 +179,12 @@ runDump opt = do
               liftIO $ IO.hPutStr hOut $ (\c -> if isPrint c then c else '.') <$> LBSC.unpack bs
               liftIO $ IO.hPutStrLn hOut ""
 
-  where
-    magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
-    bitsToW32s :: Int -> (Int, Word64) -> [Word32] -> [Word32]
-    bitsToW32s bp (i, w64) acc =
-      if bp < 64 then
-        if testBit w64 (63 - bp) then
-          bitsToW32s (bp + 1) (i, w64) (acc ++ [fromIntegral $ (i * 64) + bp])
-        else
-          bitsToW32s (bp + 1) (i, w64) acc
-      else
-        acc
+  where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
+
+word64ToList :: Int -> Word64 -> [Word32] -> [Word32]
+word64ToList _ 0 = id
+word64ToList o w = (ip:) . word64ToList o (w .&. comp b)
+  where p  = B.countTrailingZeros w
+        hi = o .<. 6
+        ip = fromIntegral (p .|. hi)
+        b  = 1 .<. fromIntegral p
