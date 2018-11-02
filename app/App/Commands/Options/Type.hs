@@ -25,3 +25,8 @@ data DumpOptions = DumpOptions
   { source :: FilePath
   , target :: FilePath
   } deriving (Eq, Show, Generic)
+
+data LsOptions = LsOptions
+  { source :: FilePath
+  , target :: FilePath
+  } deriving (Eq, Show, Generic)
