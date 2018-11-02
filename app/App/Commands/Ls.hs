@@ -3,7 +3,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 
-module App.Commands.Ls where
+module App.Commands.Ls
+  ( commandLs
+  ) where
 
 import App.Commands.Options.Type
 import Arbor.File.Format.Asif.IO
@@ -15,6 +17,7 @@ import Control.Monad.Trans.Resource   (MonadResource, runResourceT)
 import Data.Generics.Product.Any
 import Data.Maybe
 import Data.Monoid                    ((<>))
+import Data.Thyme.Clock.POSIX         (POSIXTime)
 import Data.Thyme.Format              (formatTime)
 import Data.Thyme.Time.Core
 import Data.Word
@@ -55,14 +58,6 @@ commandLs = runResourceT . runDump <$> parseLsOptions
 showTime :: FormatTime t => t -> String
 showTime = formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S %Z"))
 
-getWord32x4 :: G.Get (Word32, Word32, Word32, Word32)
-getWord32x4 = do
-  a <- G.getWord32be
-  b <- G.getWord32be
-  c <- G.getWord32be
-  d <- G.getWord32be
-  return (a, b, c, d)
-
 runDump :: MonadResource m => LsOptions -> m ()
 runDump opt = do
   (_, hIn)  <- openFileOrStd (opt ^. the @"source") IO.ReadMode
@@ -78,15 +73,32 @@ runDump opt = do
       let filenames = fromMaybe "" . (^. the @"meta" . the @"filename") <$> segments
       let namedSegments = zip filenames segments
 
-      forM_ (zip [0..] namedSegments) $ \(i :: Int, (filename, _)) -> do
-        liftIO $ IO.hPutStrLn hOut $ "#" <> show i <> " " <> T.unpack filename
+
+
+      forM_ (zip [0..] namedSegments) $ \(i :: Int, (filename, segment)) -> do
+        let meta = segment ^. the @"meta"
+
+        liftIO $ IO.hPutStrLn hOut $ mempty
+          <> (show i & trimPadLeft 4)
+          <> " " <> (meta ^. the @"createTime" <&> showPosixSeconds & fromMaybe "" & trimPadLeft   19)
+          <> " " <> (meta ^. the @"format"     <&> show             & fromMaybe "" & trimPadRight  20)
+          <> " " <> T.unpack filename
 
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
 
-word64ToList :: Int -> Word64 -> [Word32] -> [Word32]
-word64ToList _ 0 = id
-word64ToList o w = (ip:) . word64ToList o (w .&. comp b)
-  where p  = B.countTrailingZeros w
-        hi = o .<. 6
-        ip = fromIntegral (p .|. hi)
-        b  = 1 .<. fromIntegral p
+showPosixSeconds :: POSIXTime -> String
+showPosixSeconds t = take 19 (show (posixSecondsToUTCTime t))
+
+trimPadLeft :: Int -> String -> String
+trimPadLeft n s
+  | len < n   = replicate (n - len) ' ' <> s
+  | len == n  = s
+  | otherwise = '<':reverse (take (n - 1) (reverse s))
+  where len = length s
+
+trimPadRight :: Int -> String -> String
+trimPadRight n s
+  | len < n   = s <> replicate (n - len) ' '
+  | len == n  = s
+  | otherwise = take (n - 1) s <> ">"
+  where len = length s
