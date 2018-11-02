@@ -6,6 +6,8 @@ module Arbor.File.Format.Asif.Segment
   , mkDefaultSegment
   , extractSegments
   , extractNamedSegments
+  , extractHeader
+  , extractSegmentByteStringsWithHeader
   , segmentNamed
   ) where
 
@@ -34,7 +36,8 @@ mkDefaultSegment bs = Z.segment bs mempty
 
 extractSegments :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [Z.Segment LBS.ByteString]
 extractSegments magicParser bs = do
-  bss <- extractSegmentByteStrings magicParser bs
+  header <- extractHeader magicParser bs
+  bss <- extractSegmentByteStringsWithHeader bs header
   case bss of
     (as:_) -> if ".asif/filenames\0" `LBS.isPrefixOf` as
       then do
@@ -57,10 +60,16 @@ extractNamedSegments magicParser bs = do
   let filenames = fromMaybe "" . (^. the @"meta" . the @"filename") <$> segments
   return $ M.fromList $ zip filenames segments
 
+extractHeader :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [(Int, Int)]
+extractHeader magicParser bs = case runGetOrFail (getHeader magicParser) bs of
+  Left (_, _, err)     -> Left err
+  Right (_, _, header) -> Right header
+
 extractSegmentByteStrings :: AP.Parser BS.ByteString -> LBS.ByteString -> Either String [LBS.ByteString]
-extractSegmentByteStrings magicParser bs = case runGetOrFail (getHeader magicParser) bs of
-  Left (_, _, err) -> Left err
-  Right (_, _, header) -> do
+extractSegmentByteStrings magicParser bs = extractHeader magicParser bs >>= extractSegmentByteStringsWithHeader bs
+
+extractSegmentByteStringsWithHeader :: LBS.ByteString -> [(Int, Int)] -> Either String [LBS.ByteString]
+extractSegmentByteStringsWithHeader bs header = do
     let segs = fmap (\(o, l) -> LBS.take (fromIntegral l) $ LBS.drop (fromIntegral o) bs) header
     forM_ (zip segs header) $ \(seg, (_, len)) ->
       when (LC8.length seg /= fromIntegral len) $

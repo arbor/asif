@@ -73,18 +73,20 @@ runDump opt = do
       let filenames = fromMaybe "" . (^. the @"meta" . the @"filename") <$> segments
       let namedSegments = zip filenames segments
 
-
-
       forM_ (zip [0..] namedSegments) $ \(i :: Int, (filename, segment)) -> do
         let meta = segment ^. the @"meta"
 
         liftIO $ IO.hPutStrLn hOut $ mempty
           <> (show i & trimPadLeft 4)
-          <> " " <> (meta ^. the @"createTime" <&> showPosixSeconds & fromMaybe "" & trimPadLeft   19)
-          <> " " <> (meta ^. the @"format"     <&> show             & fromMaybe "" & trimPadRight  20)
+          <> " " <> (meta     ^. the @"createTime" <&> showPosixSeconds & fromMaybe ""  & trimPadLeft   19)
+          <> " " <> (meta     ^. the @"format"     <&> show             & fromMaybe ""  & trimPadRight  20)
+          <> " " <> (segment  ^. the @"payload"    &   showLbsLength                    & trimPadLeft   12)
           <> " " <> T.unpack filename
 
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
+
+showLbsLength :: LBS.ByteString -> String
+showLbsLength = show . LBS.length
 
 showPosixSeconds :: POSIXTime -> String
 showPosixSeconds t = take 19 (show (posixSecondsToUTCTime t))
