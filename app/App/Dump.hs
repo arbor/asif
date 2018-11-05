@@ -12,23 +12,24 @@ import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Whatever
 import Control.Lens
 import Control.Monad
-import Control.Monad.IO.Class          (liftIO)
-import Control.Monad.Trans.Resource    (MonadResource)
-import Data.Char                       (isPrint)
+import Control.Monad.IO.Class              (liftIO)
+import Control.Monad.Trans.Resource        (MonadResource)
+import Data.Char                           (isPrint)
 import Data.Generics.Product.Any
 import Data.List
-import Data.Monoid                     ((<>))
-import Data.Text                       (Text)
+import Data.Monoid                         ((<>))
+import Data.Text                           (Text)
 import Data.Thyme.Clock
-import Data.Thyme.Clock.POSIX          (POSIXTime)
-import Data.Thyme.Format               (formatTime)
+import Data.Thyme.Clock.POSIX              (POSIXTime)
+import Data.Thyme.Format                   (formatTime)
 import Data.Thyme.Time.Core
 import Data.Word
 import HaskellWorks.Data.Bits.BitShow
 import HaskellWorks.Data.Bits.BitWise
-import Numeric                         (showHex)
-import System.IO                       (Handle)
-import System.Locale                   (defaultTimeLocale, iso8601DateFormat)
+import HaskellWorks.Data.Vector.AsVector64
+import Numeric                             (showHex)
+import System.IO                           (Handle)
+import System.Locale                       (defaultTimeLocale, iso8601DateFormat)
 
 import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
 import qualified Arbor.File.Format.Asif.Format          as F
@@ -39,6 +40,8 @@ import qualified Data.ByteString.Lazy                   as LBS
 import qualified Data.ByteString.Lazy.Char8             as LBSC
 import qualified Data.Text                              as T
 import qualified Data.Text.Encoding                     as T
+import qualified Data.Vector.Storable                   as DVS
+import qualified HaskellWorks.Data.ByteString.Lazy      as LBS
 import qualified System.IO                              as IO
 
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
@@ -138,11 +141,17 @@ dumpSegment hOut i filename segment = do
             liftIO $ LBSC.hPutStrLn hOut (segment ^. the @"payload")
           Just (Known F.BitString) ->
             liftIO $ IO.hPutStrLn hOut (bitShow (segment ^. the @"payload"))
-          Just (Known F.Bitmap) ->
-            forM_ (zip [0..] (G.runGet G.getWord64le <$> LBS.chunkBy 8 (segment ^. the @"payload"))) $ \(idx, w64) ->
-              forM_ (word64ToList idx w64 []) $ \w32 -> do
-                let ipString = w32 & word32ToIpv4 & ipv4ToString
-                liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w32 <> ")"
+          Just (Known F.Bitmap) -> do
+            let vs = asVector64 <$> LBS.toChunks (LBS.resegmentPadded 8 (segment ^. the @"payload"))
+
+            (\f -> foldM_ f (0 :: Int) vs) $ \vi v -> do
+              (\g -> DVS.foldM g vi v) $ \w64i w64 -> do
+                when (w64 /= 0) $ do
+                  (\h -> foldM_ h (0 :: Int) (word64ToList w64i w64 [])) $ \w32i w32 -> do
+                    let ipString = w32 & word32ToIpv4 & ipv4ToString
+                    liftIO $ IO.hPutStrLn hOut $ (ipString ++) . (replicate (16 - length ipString) ' ' ++) . (' ':) . ('(':) . (show w32 ++) . (')':) $ []
+                    return (w32i + 1)
+                return (w64i + 1)
           _ ->
             forM_ (zip (LBS.chunkBy 16 (segment ^. the @"payload")) [0 :: Int, 16..]) $ \(bs, j) -> do
               let bytes = mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))

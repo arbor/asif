@@ -37,6 +37,7 @@ dependencies:
 - generic-lens
 - hw-bits
 - hw-ip
+- hw-prim
 - iproute
 - lens
 - network
