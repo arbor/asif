@@ -4,7 +4,7 @@
 
 module App.Commands.ExtractSegments where
 
-import App.Commands.Options.Type
+import App.Commands.Options.Type      (ExtractSegmentsOptions (ExtractSegmentsOptions))
 import Arbor.File.Format.Asif.IO
 import Arbor.File.Format.Asif.Segment
 import Control.Lens

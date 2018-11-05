@@ -4,7 +4,7 @@
 
 module App.Commands.EncodeFiles where
 
-import App.Commands.Options.Type
+import App.Commands.Options.Type                 (EncodeFilesOptions (EncodeFilesOptions))
 import Arbor.File.Format.Asif.ByteString.Builder
 import Arbor.File.Format.Asif.IO
 import Conduit
