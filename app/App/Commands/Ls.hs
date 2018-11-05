@@ -7,9 +7,9 @@ module App.Commands.Ls
   ( commandLs
   ) where
 
-import App.Commands.Options.Type
+import App.Commands.Options.Type      (LsOptions (LsOptions))
 import Arbor.File.Format.Asif.IO
-import Arbor.File.Format.Asif.Segment
+import Arbor.File.Format.Asif.Segment hiding (meta)
 import Control.Lens
 import Control.Monad
 import Control.Monad.IO.Class         (liftIO)
@@ -18,17 +18,10 @@ import Data.Generics.Product.Any
 import Data.Maybe
 import Data.Monoid                    ((<>))
 import Data.Thyme.Clock.POSIX         (POSIXTime)
-import Data.Thyme.Format              (formatTime)
 import Data.Thyme.Time.Core
-import Data.Word
-import HaskellWorks.Data.Bits.BitWise
 import Options.Applicative
-import System.Locale                  (defaultTimeLocale, iso8601DateFormat)
 
 import qualified Data.Attoparsec.ByteString as AP
-import qualified Data.Binary                as G
-import qualified Data.Binary.Get            as G
-import qualified Data.Bits                  as B
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy       as LBS
 import qualified Data.Text                  as T
@@ -54,9 +47,6 @@ parseLsOptions = LsOptions
 
 commandLs :: Parser (IO ())
 commandLs = runResourceT . runDump <$> parseLsOptions
-
-showTime :: FormatTime t => t -> String
-showTime = formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S %Z"))
 
 runDump :: MonadResource m => LsOptions -> m ()
 runDump opt = do
