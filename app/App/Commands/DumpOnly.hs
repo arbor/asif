@@ -7,7 +7,7 @@ module App.Commands.DumpOnly
   ( commandDumpOnly
   ) where
 
-import App.Commands.Options.Type
+import App.Commands.Options.Type      (DumpOnlyOptions (DumpOnlyOptions))
 import App.Dump
 import Arbor.File.Format.Asif.IO
 import Arbor.File.Format.Asif.Segment

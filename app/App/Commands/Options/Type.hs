@@ -22,8 +22,10 @@ data ExtractSegmentsOptions = ExtractSegmentsOptions
   } deriving (Eq, Show, Generic)
 
 data DumpOptions = DumpOptions
-  { source :: FilePath
-  , target :: FilePath
+  { source           :: FilePath
+  , target           :: FilePath
+  , withoutSegments  :: [Int]
+  , withoutFilenames :: [FilePath]
   } deriving (Eq, Show, Generic)
 
 data DumpOnlyOptions = DumpOnlyOptions

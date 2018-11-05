@@ -5,7 +5,7 @@
 
 module App.Commands.Dump where
 
-import App.Commands.Options.Type
+import App.Commands.Options.Type      (DumpOptions (DumpOptions))
 import App.Dump
 import Arbor.File.Format.Asif.IO
 import Arbor.File.Format.Asif.Segment
@@ -16,11 +16,14 @@ import Control.Monad.Trans.Resource   (MonadResource, runResourceT)
 import Data.Generics.Product.Any
 import Data.Maybe
 import Data.Monoid                    ((<>))
+import Data.Text                      (Text)
 import Options.Applicative
 
 import qualified Data.Attoparsec.ByteString as AP
 import qualified Data.ByteString            as BS
 import qualified Data.ByteString.Lazy       as LBS
+import qualified Data.Set                   as S
+import qualified Data.Text                  as T
 import qualified System.IO                  as IO
 
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
@@ -40,6 +43,20 @@ parseDumpOptions = DumpOptions
       <>  value "-"
       <>  help "Output file"
       )
+  <*> many
+      ( option auto
+        (   long "without-segment"
+        <>  metavar "SEGMENT_ID"
+        <>  help "Output file"
+        )
+      )
+  <*> many
+      ( strOption
+        (   long "without-filename"
+        <>  metavar "FILE"
+        <>  help "Output file"
+        )
+      )
 
 commandDump :: Parser (IO ())
 commandDump = runResourceT . runDump <$> parseDumpOptions
@@ -48,6 +65,8 @@ runDump :: MonadResource m => DumpOptions -> m ()
 runDump opt = do
   (_, hIn)  <- openFileOrStd (opt ^. the @"source") IO.ReadMode
   (_, hOut) <- openFileOrStd (opt ^. the @"target") IO.WriteMode
+  let dumpWithoutSegments  = opt ^. the @"withoutSegments"             & S.fromList :: S.Set Int
+  let dumpWithoutFilenames = opt ^. the @"withoutFilenames" <&> T.pack & S.fromList :: S.Set Text
 
   contents <- liftIO $ LBS.hGetContents hIn
 
@@ -60,6 +79,7 @@ runDump opt = do
       let namedSegments = zip filenames segments
 
       forM_ (zip [0..] namedSegments) $ \(i :: Int, (filename, segment)) -> do
-        dumpSegment hOut i filename segment
+        unless (S.member filename dumpWithoutFilenames || S.member i dumpWithoutSegments) $ do
+          dumpSegment hOut i filename segment
 
   where magic = AP.string "seg:" *> (BS.pack <$> many AP.anyWord8) AP.<?> "\"seg:????\""
