@@ -5,6 +5,7 @@
 
 module App.Dump
   ( dumpSegment
+  , word64ToList
   ) where
 
 import Arbor.File.Format.Asif.Data.Ip

@@ -35,6 +35,11 @@ data DumpOnlyOptions = DumpOnlyOptions
   , filenames :: [FilePath]
   } deriving (Eq, Show, Generic)
 
+data DumpBitmapOptions = DumpBitmapOptions
+  { source :: FilePath
+  , target :: FilePath
+  } deriving (Eq, Show, Generic)
+
 data LsOptions = LsOptions
   { source :: FilePath
   , target :: FilePath
