@@ -13,21 +13,21 @@ module Arbor.File.Format.Asif.Extract
   , vectorUnboxed
   ) where
 
-import Arbor.File.Format.Asif.Format   (Format)
-import Arbor.File.Format.Asif.Whatever
-import Control.Lens
-import Data.Binary.Get
-import Data.List                       hiding (map)
-import Data.Text                       (Text)
-import Data.Text.Encoding              (decodeUtf8')
-import Data.Text.Encoding.Error
-import Prelude                         hiding (map)
+import           Arbor.File.Format.Asif.Format.Type (Format)
+import           Arbor.File.Format.Asif.Whatever
+import           Control.Lens
+import           Data.Binary.Get
+import           Data.List                          hiding (map)
+import           Data.Text                          (Text)
+import           Data.Text.Encoding                 (decodeUtf8')
+import           Data.Text.Encoding.Error
+import           Prelude                            hiding (map)
 
-import qualified Data.Binary.Get      as G
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.Map.Strict      as M
-import qualified Data.Vector          as V
-import qualified Data.Vector.Unboxed  as VU
+import qualified Data.Binary.Get                    as G
+import qualified Data.ByteString.Lazy               as LBS
+import qualified Data.Map.Strict                    as M
+import qualified Data.Vector                        as V
+import qualified Data.Vector.Unboxed                as VU
 
 vectorBoxed :: Get a -> LBS.ByteString -> V.Vector a
 vectorBoxed g = V.unfoldr step

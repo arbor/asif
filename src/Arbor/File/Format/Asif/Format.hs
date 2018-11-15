@@ -1,27 +1,16 @@
-{-# LANGUAGE DeriveGeneric #-}
+module Arbor.File.Format.Asif.Format
+  ( module X
+  , SegmentValue (..)
+  , segmentValues
+  , extractValues
+  )
+where
 
-module Arbor.File.Format.Asif.Format where
+import           Arbor.File.Format.Asif.Format.Type         as X
 
-import GHC.Generics
+import           Arbor.File.Format.Asif.Format.SegmentValue
+import           Arbor.File.Format.Asif.Segment
+import           Data.ByteString.Lazy                       as LBS
 
-data Format
-  = Binary
-  | Bitmap
-  | BitString
-  | Char
-  | Int8
-  | Int16LE
-  | Int32LE
-  | Int64LE
-  | Ipv4
-  | Ipv6
-  | Repeat Word Format
-  | StringZ
-  | Text
-  | TimeMicros64LE
-  | TimeMillis64LE
-  | Word8
-  | Word16LE
-  | Word32LE
-  | Word64LE
-  deriving (Eq, Read, Show, Generic)
+extractValues :: (SegmentValue -> a) -> Segment LBS.ByteString -> [a]
+extractValues f s = f <$> segmentValues s
