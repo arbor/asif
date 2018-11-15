@@ -20,6 +20,7 @@ import qualified Data.ByteString.Lazy.Char8             as LBSC
 import           Data.Generics.Product.Any
 import           Data.Int
 import           Data.IP
+import           Data.Semigroup                         ((<>))
 import qualified Data.Text                              as T
 import           Data.Thyme.Time.Core
 import           Data.Word

@@ -11,11 +11,14 @@ import           Arbor.File.Format.Asif.Type
 import           Arbor.File.Format.Asif.Whatever
 import           Control.Lens
 import qualified Data.List                       as L
+import           Data.Semigroup                  ((<>))
 import           Data.Thyme.Time.Core
 
 import qualified Data.ByteString.Builder         as BB
 import qualified Data.ByteString.Lazy            as LBS
 import qualified Data.ByteString.Lazy.Char8      as LC8
+
+import           Arbor.TestUtils
 import           HaskellWorks.Hspec.Hedgehog
 import           Hedgehog
 import           Test.Hspec
@@ -136,6 +139,3 @@ testMany fmt wrap put gen = do
   let body = vs <&> put & mconcat & BB.toLazyByteString
   let seg = segment body $ metaFormat (Known fmt)
   segmentValues seg === fmap wrap vs
-
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf n = L.takeWhile (not . L.null) . L.unfoldr (Just . L.splitAt n)

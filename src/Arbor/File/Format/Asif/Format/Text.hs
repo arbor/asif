@@ -1,6 +1,6 @@
 {-# LANGUAGE LambdaCase #-}
 module Arbor.File.Format.Asif.Format.Text
-( rawValueToText
+( segmentValueToText
 )
 where
 
@@ -16,8 +16,8 @@ import qualified Data.Text.Encoding                         as T
 import           HaskellWorks.Data.Bits.BitShow             (bitShow)
 import           Numeric                                    (showHex)
 
-rawValueToText :: SegmentValue -> Text
-rawValueToText = \case
+segmentValueToText :: SegmentValue -> Text
+segmentValueToText = \case
   SString v -> T.decodeUtf8 (LBS.toStrict v)
   SChar v -> T.singleton v
   STime v -> T.pack $ show v
@@ -43,6 +43,8 @@ rawValueToText = \case
   SBitString v  -> T.pack $ bitShow v
   SBitmap v     -> T.pack $ bitShow v
   SBinary v     -> LBS.chunkBy 4 v <&> toHex & L.intersperse " " & mconcat
+
+  SList vs -> vs <&> segmentValueToText & T.intercalate ","
 
   SUnknown _ v -> LBS.chunkBy 4 v <&> toHex & L.intersperse " " & mconcat
 
