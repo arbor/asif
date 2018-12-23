@@ -6,15 +6,15 @@ module Gen.Feed
   ) where
 
 import Data.Word
-import HaskellWorks.Data.Network.Ip
 import HaskellWorks.Data.Network.Ip.Internal
+import HaskellWorks.Data.Network.Ip.Ipv4
 import Hedgehog
 
 import qualified Hedgehog.Gen   as G
 import qualified Hedgehog.Range as R
 
-ipv4 :: MonadGen m => Word8 -> Word8 -> m Ipv4Address
-ipv4 start stop = Ipv4Address <$> (fourOctetsToWord32 <$> w8 <*> w8 <*> w8 <*> w8)
+ipv4 :: MonadGen m => Word8 -> Word8 -> m IpAddress
+ipv4 start stop = IpAddress <$> (fourOctetsToWord32 <$> w8 <*> w8 <*> w8 <*> w8)
   where w8 = G.word8 (R.linear start stop)
 
 feedElemIp :: MonadGen m => Range Word32 -> m Word32
