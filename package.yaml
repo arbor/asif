@@ -34,6 +34,7 @@ dependencies:
 - cpu
 - either
 - exceptions
+- foldl
 - generic-lens
 - hw-bits
 - hw-ip
