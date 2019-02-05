@@ -23,6 +23,7 @@ import qualified Data.ByteString.Builder       as BB
 import qualified Data.ByteString.Lazy          as LBS
 import qualified Data.IP                       as IP
 import qualified Data.Text                     as T
+import qualified Data.Text.Encoding            as T
 import qualified Data.Text.Lazy                as TL
 import qualified Data.Text.Lazy.Encoding       as TE
 
@@ -64,6 +65,15 @@ lazyByteStringSegment fmt f t = FoldM step initial extract
     initial = genericInitial t
     step = genericStep BB.lazyByteString f
     extract = genericExtract t fmt
+
+nullTerminatedStringSegment :: MonadResource m => (a -> T.Text) -> T.Text -> FoldM m a [Segment Handle]
+nullTerminatedStringSegment f t = FoldM step initial extract
+  where
+    initial = genericInitial t
+    step h b = do
+      liftIO $ BB.hPutBuilder h $ BB.byteString (T.encodeUtf8 . f $ b) <> BB.word8 0
+      pure h
+    extract = genericExtract t (Known F.StringZ)
 
 textSegment :: MonadResource m => (a -> T.Text) -> T.Text -> FoldM m a [Segment Handle]
 textSegment f t = FoldM step initial extract
