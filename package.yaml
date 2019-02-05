@@ -1,5 +1,5 @@
 name:                asif
-version:             3.3.0
+version:             3.3.1
 github:              "packetloop/asif"
 license:             MIT
 category:            Services
@@ -67,6 +67,7 @@ library:
     - Arbor.File.Format.Asif.Segment
     - Arbor.File.Format.Asif.Type
     - Arbor.File.Format.Asif.Whatever
+    - Arbor.File.Format.Asif.Write
   ghc-options:
     - -Wall
     - -Wcompat

@@ -5,10 +5,7 @@
 -- Module: Arbor.File.Format.Asif.Write
 --
 -- Functions to make it easier to write ASIF files without needing to deal with
--- raw Handles and Bytestrings too much.
---
---
---
+-- raw Handles and ByteStrings too much.
 
 module Arbor.File.Format.Asif.Write
   (
@@ -118,6 +115,7 @@ buildAsifBytestring asifType mTimestamp fld foldable = do
 -- $segments
 --
 -- Use these to build 'FoldM's for the types you want to encode.
+-- Compose them together using '<>'.
 
 -- | Builds a segment from lazy bytestrings.
 -- This can in priciple cover any bytestring-y format,
