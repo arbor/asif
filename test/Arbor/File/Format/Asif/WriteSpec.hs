@@ -28,7 +28,7 @@ import qualified Hedgehog.Range             as R
 
 spec :: Spec
 spec = describe "Arbor.File.Format.Asif.Write" $ do
-  it "should write out some stuff, then read it back in" $ require $ property $ do
+  it "should write several segments, then read them back in" $ require $ property $ do
     tplList <- forAll $ G.list (R.linear 0 50) genTriple
 
     let f1 = int64Segment                (\(a,_,_) -> a) "first"
@@ -174,13 +174,35 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
 
     (SChar <$> lst) === seg
 
+  it "should write out and read back in a null-terminated string segment" $ require $ property $ do
+    lst <- forAll $ G.list (R.linear 0 50) genNonNullText
+
+    lbs <- buildAsifBytestring "wxyz" Nothing (nullTerminatedStringSegment id "nullterminatedstring") (T.toStrict <$> lst)
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
+
+    (SString . T.encodeUtf8 <$> lst) === seg
+
+  it "should write out and read back in a text segment" $ require $ property $ do
+    -- Explaination of this test:
+    -- We can't deliniate 'breaks' in Text when we read it back in,
+    -- so regardless of how many we write out, when we read it back we only
+    -- get a single Text value.
+    lst <- forAll $ G.list (R.linear 1 50) (G.text (R.linear 0 50) G.unicode)
+
+    lbs <- buildAsifBytestring "wxyz" Nothing (textSegment id "text") lst
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
+
+    [SText . T.encodeUtf8 . T.concat $ T.fromStrict <$> lst] === seg
+
 
 genTriple :: MonadGen m => m (Int64, Word16, T.Text)
 genTriple
   = (,,)
   <$> G.int64 R.linearBounded
   <*> G.word16 R.linearBounded
-  <*> (T.fromStrict <$> G.text (R.linear 0 32) (G.filter (/= toEnum 0) G.unicode))
+  <*> genNonNullText
 
 genIpv6 :: MonadGen m => m IP.IPv6
 genIpv6 = word32x4ToIpv6 <$> gen4
@@ -189,6 +211,10 @@ genIpv6 = word32x4ToIpv6 <$> gen4
     gen4 =
       let g = G.word32 R.linearBounded
       in (,,,) <$> g <*> g <*> g <*> g
+
+genNonNullText :: MonadGen m => m T.Text
+genNonNullText =
+  T.fromStrict <$> G.text (R.linear 0 32) (G.filter (/= toEnum 0) G.unicode)
 
 
 instance MonadResource m => MonadResource (PropertyT m) where
