@@ -41,6 +41,7 @@ module Arbor.File.Format.Asif.Write
 where
 
 import Arbor.File.Format.Asif.ByteString.Builder
+import Arbor.File.Format.Asif.Data.Ip            (ipv4ToWord32, ipv6ToWord32x4)
 import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever           (Whatever (..))
 import Conduit
@@ -231,7 +232,7 @@ ipv4Segment :: MonadResource m => (a -> IP.IPv4) -> T.Text -> FoldM m a [Segment
 ipv4Segment f t = FoldM step initial extract
     where
       initial = genericInitial t
-      step = genericStep BB.word32LE (IP.toHostAddress . f)
+      step = genericStep BB.word32LE (ipv4ToWord32 . f)
       extract = genericExtract t (Known F.Ipv4)
 
 -- | Builds a segment of 'IPv6's.
@@ -239,7 +240,8 @@ ipv6Segment :: MonadResource m => (a -> IP.IPv6) -> T.Text -> FoldM m a [Segment
 ipv6Segment f t = FoldM step initial extract
     where
       initial = genericInitial t
-      step = genericStep (Prelude.foldMap BB.word32LE) (tupleToList . IP.toHostAddress6 . f)
+      -- I do not know why this is Big-Endian, when everything else is Little-Endian.
+      step = genericStep (Prelude.foldMap BB.word32BE) (tupleToList . ipv6ToWord32x4 . f)
       extract = genericExtract t (Known F.Ipv6)
       tupleToList (w1,w2,w3,w4) = [w1,w2,w3,w4]
 
