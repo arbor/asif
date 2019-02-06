@@ -6,6 +6,7 @@ import Arbor.File.Format.Asif.Write
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Resource
 import Data.Int
+import Data.Semigroup                 ((<>))
 import Data.Word
 
 import HaskellWorks.Hspec.Hedgehog
