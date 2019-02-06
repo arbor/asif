@@ -154,7 +154,7 @@ asciiSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment H
 asciiSegment f t = FoldM step initial extract
   where
     initial = genericInitial t
-    step = genericStep BB.charUtf8 f
+    step = genericStep BB.char8 f
     extract = genericExtract t (Known F.Char)
 
 -----
