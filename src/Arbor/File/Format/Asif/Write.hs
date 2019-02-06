@@ -19,7 +19,7 @@ module Arbor.File.Format.Asif.Write
   , lazyByteStringSegment
   , nullTerminatedStringSegment
   , textSegment
-  , charSegment
+  , asciiSegment
   , word8Segment
   , word16Segment
   , word32Segment
@@ -150,8 +150,8 @@ textSegment f t = FoldM step initial extract
     extract = genericExtract t (Known F.Text)
 
 -- | Builds a segment of 'Char's.
-charSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment Handle]
-charSegment f t = FoldM step initial extract
+asciiSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment Handle]
+asciiSegment f t = FoldM step initial extract
   where
     initial = genericInitial t
     step = genericStep BB.charUtf8 f

@@ -163,6 +163,17 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
 
     (STime <$> lst) === seg
 
+-----
+
+  it "should write out and read back in a char segment" $ require $ property $ do
+    lst <- forAll $ G.list (R.linear 0 50) G.ascii
+
+    lbs <- buildAsifBytestring "wxyz" Nothing (asciiSegment id "char") lst
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
+
+    (SChar <$> lst) === seg
+
 
 genTriple :: MonadGen m => m (Int64, Word16, T.Text)
 genTriple
