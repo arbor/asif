@@ -18,6 +18,8 @@ import qualified Data.Attoparsec.ByteString as AP
 import qualified Data.IP                    as IP
 import qualified Data.Text.Lazy             as T
 import qualified Data.Text.Lazy.Encoding    as T
+import qualified Data.Thyme.Clock.POSIX     as TY
+import qualified Data.Thyme.Time.Core       as TY
 import qualified Hedgehog.Gen               as G
 import qualified Hedgehog.Range             as R
 
@@ -150,6 +152,16 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
 
     (SIpv6 <$> lst) === seg
 
+-----
+
+  it "should write out and read back in a time segment" $ require $ property $ do
+    lst <- forAll $ G.list (R.linear 0 50) (TY.posixSecondsToUTCTime . TY.fromMicroseconds <$> G.int64 R.linearBounded)
+
+    lbs <- buildAsifBytestring "wxyz" Nothing (utcTimeMicrosSegment id "time") lst
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
+
+    (STime <$> lst) === seg
 
 
 genTriple :: MonadGen m => m (Int64, Word16, T.Text)
