@@ -46,6 +46,7 @@ dependencies:
 - temporary-resourcet
 - text
 - thyme
+- transformers
 - vector
 
 library:
