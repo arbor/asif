@@ -42,6 +42,7 @@ dependencies:
 - lens
 - network
 - old-locale
+- profunctors
 - resourcet
 - temporary-resourcet
 - text
