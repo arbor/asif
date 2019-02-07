@@ -6,7 +6,8 @@ where
 import           GHC.Generics
 
 data Format
-  = Binary
+  = Bool
+  | Binary
   | Bitmap
   | BitString
   | Char

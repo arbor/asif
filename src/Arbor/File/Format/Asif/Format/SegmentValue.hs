@@ -28,6 +28,7 @@ import           GHC.Generics                           (Generic)
 
 data SegmentValue
   = SString LBS.ByteString
+  | SBool Bool
   | SChar Char
   | STime UTCTime
   | SIpv4 IPv4
@@ -68,6 +69,10 @@ getRawValue format bs =
       if LBS.null bs
         then []
         else init (LBS.split 0 bs) <&> SString
+
+    F.Bool -> whenNonEmpty bs $
+      let toBool = (/=) 0
+      in bs & getValues 1 G.getWord8 <&> (SBool . toBool)
 
     F.Char -> whenNonEmpty bs $
       LBSC.unpack bs <&> SChar
