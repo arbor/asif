@@ -6,10 +6,10 @@ where
 import           GHC.Generics
 
 data Format
-  = Bool
-  | Binary
+  = Binary
   | Bitmap
   | BitString
+  | Bool
   | Char
   | Int8
   | Int16LE
