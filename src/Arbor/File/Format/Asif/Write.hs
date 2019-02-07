@@ -20,6 +20,7 @@ module Arbor.File.Format.Asif.Write
   , nullTerminatedStringSegment
   , textSegment
   , asciiSegment
+  , boolSegment
   , word8Segment
   , word16Segment
   , word32Segment
@@ -148,6 +149,13 @@ asciiSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment H
 asciiSegment = genericFold BB.char8 (Known F.Char)
 
 -----
+
+-- | Build a segment of 'Bool's, encoded as 'Word8's, where False == 0, and True == 1
+boolSegment :: MonadResource m => (a -> Bool) -> T.Text -> FoldM m a [Segment Handle]
+boolSegment f = genericFold BB.word8 (Known F.Bool) (bool2word8 . f)
+    where
+      bool2word8 False = 0
+      bool2word8 True  = 1
 
 -- | Builds a segment of 'Word8's.
 word8Segment :: MonadResource m => (a -> Word8) -> T.Text -> FoldM m a [Segment Handle]

@@ -9,6 +9,7 @@ data Format
   = Binary
   | Bitmap
   | BitString
+  | Bool
   | Char
   | Int8
   | Int16LE

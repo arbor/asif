@@ -48,6 +48,16 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
 
 -----
 
+  it "should write out and read back in a bool segment" $ require $ property $ do
+    lst <- forAll $ G.list (R.linear 0 50) G.bool
+
+    lbs <- buildAsifBytestring "wxyz" Nothing (boolSegment id "bool") lst
+
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
+
+    (SBool <$> lst) === seg
+
   it "should write out and read back in a word8 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.word8 R.linearBounded)
 

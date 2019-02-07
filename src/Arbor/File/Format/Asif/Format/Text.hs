@@ -19,6 +19,7 @@ import           Numeric                                    (showHex)
 segmentValueToText :: SegmentValue -> Text
 segmentValueToText = \case
   SString v -> T.decodeUtf8 (LBS.toStrict v)
+  SBool v -> T.pack $ show v
   SChar v -> T.singleton v
   STime v -> T.pack $ show v
 
