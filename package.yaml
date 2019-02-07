@@ -1,5 +1,5 @@
 name:                asif
-version:             3.3.1
+version:             3.3.4
 github:              "packetloop/asif"
 license:             MIT
 category:            Services
@@ -42,10 +42,12 @@ dependencies:
 - lens
 - network
 - old-locale
+- profunctors
 - resourcet
 - temporary-resourcet
 - text
 - thyme
+- transformers
 - vector
 
 library:

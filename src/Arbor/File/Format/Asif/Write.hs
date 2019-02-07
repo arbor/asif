@@ -19,7 +19,7 @@ module Arbor.File.Format.Asif.Write
   , lazyByteStringSegment
   , nullTerminatedStringSegment
   , textSegment
-  , charSegment
+  , asciiSegment
   , word8Segment
   , word16Segment
   , word32Segment
@@ -37,10 +37,12 @@ module Arbor.File.Format.Asif.Write
   , genericInitial
   , genericStep
   , genericExtract
+  , genericFold
   )
 where
 
 import Arbor.File.Format.Asif.ByteString.Builder
+import Arbor.File.Format.Asif.Data.Ip            (ipv4ToWord32, ipv6ToWord32x4)
 import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever           (Whatever (..))
 import Conduit
@@ -49,6 +51,7 @@ import Control.Lens
 import Control.Monad.IO.Class                    (liftIO)
 import Control.Monad.Trans.Resource              (MonadResource)
 import Data.Int
+import Data.Profunctor                           (lmap)
 import Data.Semigroup                            ((<>))
 import Data.Word
 import System.IO                                 (Handle, SeekMode (AbsoluteSeek), hFlush, hSeek)
@@ -122,11 +125,7 @@ buildAsifBytestring asifType mTimestamp fld foldable = do
 -- including StringZ, Text, Binary, Bitmap, and Bitstring, as well as unknown encodings.
 -- Correctly encoding the value is the responsibility of the caller.
 lazyByteStringSegment :: MonadResource m => Whatever F.Format -> (a -> LBS.ByteString) -> T.Text -> FoldM m a [Segment Handle]
-lazyByteStringSegment fmt f t = FoldM step initial extract
-  where
-    initial = genericInitial t
-    step = genericStep BB.lazyByteString f
-    extract = genericExtract t fmt
+lazyByteStringSegment = genericFold BB.lazyByteString
 
 -- | Builds a segment of null-termianted strings.
 -- Note that the input itself does *not* need to be null-terminated.
@@ -142,116 +141,69 @@ nullTerminatedStringSegment f t = FoldM step initial extract
 
 -- | Builds a segment of 'Text's.
 textSegment :: MonadResource m => (a -> T.Text) -> T.Text -> FoldM m a [Segment Handle]
-textSegment f t = FoldM step initial extract
-  where
-    initial = genericInitial t
-    step = genericStep TE.encodeUtf8Builder (TL.fromStrict . f)
-    extract = genericExtract t (Known F.Text)
+textSegment f = genericFold TE.encodeUtf8Builder (Known F.Text) (TL.fromStrict . f)
 
 -- | Builds a segment of 'Char's.
-charSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment Handle]
-charSegment f t = FoldM step initial extract
-  where
-    initial = genericInitial t
-    step = genericStep BB.charUtf8 f
-    extract = genericExtract t (Known F.Char)
+asciiSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment Handle]
+asciiSegment = genericFold BB.char8 (Known F.Char)
 
 -----
 
 -- | Builds a segment of 'Word8's.
 word8Segment :: MonadResource m => (a -> Word8) -> T.Text -> FoldM m a [Segment Handle]
-word8Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.word8 f
-      extract = genericExtract t (Known F.Word8)
+word8Segment = genericFold BB.word8 (Known F.Word8)
 
 -- | Builds a segment of 'Word16's.
 word16Segment :: MonadResource m => (a -> Word16) -> T.Text -> FoldM m a [Segment Handle]
-word16Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.word16LE f
-      extract = genericExtract t (Known F.Word16LE)
+word16Segment = genericFold BB.word16LE (Known F.Word16LE)
 
 -- | Builds a segment of 'Word32's.
 word32Segment :: MonadResource m => (a -> Word32) -> T.Text -> FoldM m a [Segment Handle]
-word32Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.word32LE f
-      extract = genericExtract t (Known F.Word32LE)
+word32Segment = genericFold BB.word32LE (Known F.Word32LE)
 
 -- | Builds a segment of 'Word64's.
 word64Segment :: MonadResource m => (a -> Word64) -> T.Text -> FoldM m a [Segment Handle]
-word64Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.word64LE f
-      extract = genericExtract t (Known F.Word64LE)
+word64Segment = genericFold BB.word64LE (Known F.Word64LE)
 
 -----
 
 -- | Builds a segment of 'Int8's.
 int8Segment :: MonadResource m => (a -> Int8) -> T.Text -> FoldM m a [Segment Handle]
-int8Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.int8 f
-      extract = genericExtract t (Known F.Int8)
+int8Segment = genericFold BB.int8 (Known F.Int8)
 
 -- | Builds a segment of 'Int16's.
 int16Segment :: MonadResource m => (a -> Int16) -> T.Text -> FoldM m a [Segment Handle]
-int16Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.int16LE f
-      extract = genericExtract t (Known F.Int16LE)
+int16Segment = genericFold BB.int16LE (Known F.Int16LE)
 
 -- | Builds a segment of 'Int32's.
 int32Segment :: MonadResource m => (a -> Int32) -> T.Text -> FoldM m a [Segment Handle]
-int32Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.int32LE f
-      extract = genericExtract t (Known F.Int32LE)
+int32Segment = genericFold BB.int32LE (Known F.Int32LE)
 
 -- | Builds a segment of 'Int64's.
 int64Segment :: MonadResource m => (a -> Int64) -> T.Text -> FoldM m a [Segment Handle]
-int64Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.int64LE f
-      extract = genericExtract t (Known F.Int64LE)
+int64Segment = genericFold BB.int64LE (Known F.Int64LE)
 
 -----
 
 -- | Builds a segment of 'IPv4's.
 ipv4Segment :: MonadResource m => (a -> IP.IPv4) -> T.Text -> FoldM m a [Segment Handle]
-ipv4Segment f t = FoldM step initial extract
-    where
-      initial = genericInitial t
-      step = genericStep BB.word32LE (IP.toHostAddress . f)
-      extract = genericExtract t (Known F.Ipv4)
+ipv4Segment f = genericFold BB.word32LE (Known F.Ipv4) (ipv4ToWord32 . f)
 
 -- | Builds a segment of 'IPv6's.
 ipv6Segment :: MonadResource m => (a -> IP.IPv6) -> T.Text -> FoldM m a [Segment Handle]
-ipv6Segment f t = FoldM step initial extract
+ipv6Segment f = genericFold encoding (Known F.Ipv6) extract
     where
-      initial = genericInitial t
-      step = genericStep (Prelude.foldMap BB.word32LE) (tupleToList . IP.toHostAddress6 . f)
-      extract = genericExtract t (Known F.Ipv6)
+      -- I do not know why this is Big-Endian, when everything else is Little-Endian.
+      encoding = Prelude.foldMap BB.word32BE
+      extract = tupleToList . ipv6ToWord32x4 . f
       tupleToList (w1,w2,w3,w4) = [w1,w2,w3,w4]
 
 -----
 
 -- | Builds a segment of 'UTCTime's, accurate to microseconds.
 utcTimeMicrosSegment :: MonadResource m => (a -> TY.UTCTime) -> T.Text -> FoldM m a [Segment Handle]
-utcTimeMicrosSegment f t = FoldM step initial extract
+utcTimeMicrosSegment f = genericFold BB.int64LE (Known F.TimeMicros64LE) (fromTime . f)
     where
-      initial = genericInitial t
-      step = genericStep BB.int64LE (fromTime . f)
-      extract = genericExtract t (Known F.TimeMicros64LE)
       fromTime :: TY.UTCTime -> Int64
       fromTime = view (TY.posixTime . TY.microseconds)
 
@@ -266,10 +218,13 @@ genericInitial name = do
   (_, _, h) <- openTempFile Nothing (T.unpack name)
   pure h
 
-genericStep :: MonadResource m => (a -> BB.Builder) -> (b -> a) -> Handle -> b -> m Handle
-genericStep enc f h b = do
-  liftIO $ BB.hPutBuilder h $ enc (f b)
+genericStep :: MonadResource m => (a -> BB.Builder) -> Handle -> a -> m Handle
+genericStep enc h b = do
+  liftIO $ BB.hPutBuilder h $ enc b
   pure h
 
 genericExtract :: MonadResource m => T.Text -> Whatever F.Format -> Handle -> m [Segment Handle]
 genericExtract filen typ h = pure [segment h $ metaFilename filen <> metaFormat typ]
+
+genericFold :: MonadResource m =>  (a -> BB.Builder) -> Whatever F.Format -> (b -> a) -> T.Text -> FoldM m b [Segment Handle]
+genericFold enc fmt f t = lmap f $ FoldM (genericStep enc) (genericInitial t) (genericExtract t fmt)
