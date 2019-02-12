@@ -4,17 +4,20 @@ import Arbor.File.Format.Asif.Data.Ip
 import Arbor.File.Format.Asif.Format
 import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Write
+import Control.Monad.IO.Class         (liftIO)
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Resource
 import Data.Int
 import Data.Semigroup                 ((<>))
 import Data.Word
+import System.IO.Temp                 (openBinaryTempFile)
 
 import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
 import Test.Hspec
 
 import qualified Data.Attoparsec.ByteString as AP
+import qualified Data.ByteString.Lazy       as LBS
 import qualified Data.IP                    as IP
 import qualified Data.Text.Lazy             as T
 import qualified Data.Text.Lazy.Encoding    as T
@@ -23,11 +26,34 @@ import qualified Data.Thyme.Time.Core       as TY
 import qualified Hedgehog.Gen               as G
 import qualified Hedgehog.Range             as R
 
+import qualified System.IO as IO
+
 
 {-# ANN module ("HLint: ignore Redundant do"  :: String) #-}
 
 spec :: Spec
 spec = describe "Arbor.File.Format.Asif.Write" $ do
+  it "should write file and read it back again" $ require $ property $ do
+    tplList <- forAll $ G.list (R.linear 0 50) genTriple
+
+    let fld =  int64Segment                (\(a,_,_) -> a) "first"
+            <> word16Segment               (\(_,a,_) -> a) "second"
+            <> nullTerminatedStringSegment (\(_,_,a) -> T.toStrict a) "third"
+
+    (_, f, h) <- openBinaryTempFile Nothing "wtite-asif-test.asif"
+
+    _ <- writeAsif h "wxyz" Nothing fld tplList
+    liftIO $ IO.hSeek h IO.AbsoluteSeek 0
+
+    lbs <- liftIO $ LBS.hGetContents h
+
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, l1,l2,l3] <- forAll $ pure (segmentValues <$> segments)
+
+    ((\(a,_,_) -> SInt64 a) <$> tplList) === l1
+    ((\(_,a,_) -> SWord16 a) <$> tplList) === l2
+    ((\(_,_,a) -> SString . T.encodeUtf8 $ a) <$> tplList) === l3
+
   it "should write several segments, then read them back in" $ require $ property $ do
     tplList <- forAll $ G.list (R.linear 0 50) genTriple
 
