@@ -12,7 +12,8 @@ module Arbor.File.Format.Asif.Write
   -- * Encode an entire ASIF bytestring
   -- $usage
     writeAsif
-  , buildAsifBytestring
+  , asifContent
+  , asifContentC
 
   -- * Folds for Segments
   -- $segments
@@ -55,10 +56,11 @@ import Data.Int
 import Data.Profunctor                           (lmap)
 import Data.Semigroup                            ((<>))
 import Data.Word
-import System.IO                                 (Handle, SeekMode (AbsoluteSeek), hFlush, hSeek)
+import System.IO                                 (Handle, hFlush)
 import System.IO.Temp                            (openTempFile)
 
 import qualified Arbor.File.Format.Asif.Format as F
+import qualified Data.ByteString               as BS
 import qualified Data.ByteString.Builder       as BB
 import qualified Data.ByteString.Lazy          as LBS
 import qualified Data.IP                       as IP
@@ -81,7 +83,7 @@ import qualified Data.Thyme.Time.Core   as TY
 -- out the constituent pieces to encode into 'Segment's.
 --
 -- 'FoldM's are composable using '<>'. Once you have a single, provide it to
--- 'writeAsif' or 'buildAsifBytestring' along with an appropriate foldable.
+-- 'writeAsif' or 'asifContent' along with an appropriate foldable.
 -- Both these functions will stream from the input, assuming the foldable is
 -- something that can be streamed from.
 
@@ -95,27 +97,37 @@ writeAsif :: (Foldable f, MonadResource m)
   -> f a
   -> m ()
 writeAsif hOutput asifType mTimestamp fld foldable = do
-  segments <- foldM fld foldable
-  contents  <- segmentsC asifType mTimestamp segments
-  runConduit $ contents .| sinkHandle hOutput
+  runConduit
+    $  asifContentC asifType mTimestamp fld foldable
+    .| sinkHandle hOutput
   liftIO $ hFlush hOutput
+
 
 -- | Builds a lazy ASIF bytestring.
 -- Streams the input foldable if possible.
-buildAsifBytestring :: (Foldable f, MonadResource m)
+asifContent :: (Foldable f, MonadResource m)
   => String
   -> Maybe TY.POSIXTime
   -> FoldM m a [Segment Handle]
   -> f a
   -> m LBS.ByteString
-buildAsifBytestring asifType mTimestamp fld foldable = do
-  (_, _, h) <- openTempFile Nothing "asif"
-  writeAsif h asifType mTimestamp fld foldable
-  liftIO $ hSeek h AbsoluteSeek 0
-  liftIO $ LBS.hGetContents h
+asifContent asifType mTimestamp fld foldable =
+  runConduit
+    $  asifContentC asifType mTimestamp fld foldable
+    .| sinkLazy
 
------
+-- | Returns ASIF content as a conduit
+asifContentC :: (Foldable f, MonadResource m)
+  => String
+  -> Maybe TY.POSIXTime
+  -> FoldM m a [Segment Handle]
+  -> f a
+  -> ConduitT () BS.ByteString m ()
+asifContentC asifType mTimestamp fld foldable = do
+  segments <- lift $ foldM fld foldable
+  segmentsC asifType mTimestamp segments
 
+----
 -- $segments
 --
 -- Use these to build 'FoldM's for the types you want to encode.
