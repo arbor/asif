@@ -36,7 +36,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
     let f3 = nullTerminatedStringSegment (\(_,_,a) -> T.toStrict a) "third"
     let fld = f1 <> f2 <> f3
 
-    lbs <- buildAsifBytestring "wxyz" Nothing fld tplList
+    lbs <- asifContent "wxyz" Nothing fld tplList
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
 
@@ -51,7 +51,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a bool segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) G.bool
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (boolSegment id "bool") lst
+    lbs <- asifContent "wxyz" Nothing (boolSegment id "bool") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -61,7 +61,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a word8 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.word8 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (word8Segment id "word8") lst
+    lbs <- asifContent "wxyz" Nothing (word8Segment id "word8") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -71,7 +71,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a word16 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.word16 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (word16Segment id "word16") lst
+    lbs <- asifContent "wxyz" Nothing (word16Segment id "word16") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -81,7 +81,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a word32 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.word32 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (word32Segment id "word32") lst
+    lbs <- asifContent "wxyz" Nothing (word32Segment id "word32") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -91,7 +91,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a word64 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.word64 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (word64Segment id "word64") lst
+    lbs <- asifContent "wxyz" Nothing (word64Segment id "word64") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -103,7 +103,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a int8 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.int8 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (int8Segment id "int8") lst
+    lbs <- asifContent "wxyz" Nothing (int8Segment id "int8") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -113,7 +113,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a int16 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.int16 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (int16Segment id "int16") lst
+    lbs <- asifContent "wxyz" Nothing (int16Segment id "int16") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -123,7 +123,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a int32 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.int32 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (int32Segment id "int32") lst
+    lbs <- asifContent "wxyz" Nothing (int32Segment id "int32") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -133,7 +133,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a int64 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (G.int64 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (int64Segment id "int64") lst
+    lbs <- asifContent "wxyz" Nothing (int64Segment id "int64") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -145,7 +145,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a ipv4 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (word32ToIpv4 <$> G.word32 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (ipv4Segment id "ipv4") lst
+    lbs <- asifContent "wxyz" Nothing (ipv4Segment id "ipv4") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -155,7 +155,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a ipv6 segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) genIpv6
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (ipv6Segment id "ipv6") lst
+    lbs <- asifContent "wxyz" Nothing (ipv6Segment id "ipv6") lst
 
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
@@ -167,7 +167,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a time segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) (TY.posixSecondsToUTCTime . TY.fromMicroseconds <$> G.int64 R.linearBounded)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (utcTimeMicrosSegment id "time") lst
+    lbs <- asifContent "wxyz" Nothing (utcTimeMicrosSegment id "time") lst
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
 
@@ -178,7 +178,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a char segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) G.ascii
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (asciiSegment id "char") lst
+    lbs <- asifContent "wxyz" Nothing (asciiSegment id "char") lst
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
 
@@ -187,7 +187,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
   it "should write out and read back in a null-terminated string segment" $ require $ property $ do
     lst <- forAll $ G.list (R.linear 0 50) genNonNullText
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (nullTerminatedStringSegment id "nullterminatedstring") (T.toStrict <$> lst)
+    lbs <- asifContent "wxyz" Nothing (nullTerminatedStringSegment id "nullterminatedstring") (T.toStrict <$> lst)
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
 
@@ -200,7 +200,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
     -- get a single Text value.
     lst <- forAll $ G.list (R.linear 1 50) (G.text (R.linear 0 50) G.unicode)
 
-    lbs <- buildAsifBytestring "wxyz" Nothing (textSegment id "text") lst
+    lbs <- asifContent "wxyz" Nothing (textSegment id "text") lst
     let Right segments = extractSegments (AP.string "seg:wxyz") lbs
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
 

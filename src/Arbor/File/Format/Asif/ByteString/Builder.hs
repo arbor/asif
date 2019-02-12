@@ -10,20 +10,20 @@ module Arbor.File.Format.Asif.ByteString.Builder
   , magicLength
   ) where
 
-import           Arbor.File.Format.Asif.Whatever
-import           Conduit
-import           Control.Lens
-import           Control.Monad
-import           Data.Bits
-import           Data.ByteString.Builder
-import           Data.Generics.Product.Any
-import           Data.Int
-import           Data.Maybe
-import           Data.Monoid                        ((<>))
-import           Data.String
-import           Data.Thyme.Clock
-import           Data.Thyme.Clock.POSIX             (POSIXTime, getPOSIXTime)
-import           Data.Word
+import Arbor.File.Format.Asif.Whatever
+import Conduit
+import Control.Lens
+import Control.Monad
+import Data.Bits
+import Data.ByteString.Builder
+import Data.Generics.Product.Any
+import Data.Int
+import Data.Maybe
+import Data.Monoid                     ((<>))
+import Data.String
+import Data.Thyme.Clock
+import Data.Thyme.Clock.POSIX          (POSIXTime, getPOSIXTime)
+import Data.Word
 
 import qualified Arbor.File.Format.Asif.Format.Type as F
 import qualified Arbor.File.Format.Asif.IO          as IO
@@ -90,11 +90,11 @@ segmentsRawC asifType handles = do
     sourceHandle h
     CL.sourceList (replicate (fromIntegral padding) (BS.singleton 0))
 
-segmentsC :: (MonadIO m, MonadResource m)
+segmentsC :: MonadResource m
   => String
   -> Maybe POSIXTime
   -> [Z.Segment IO.Handle]
-  -> m (ConduitT () BS.ByteString m ())
+  -> ConduitT () BS.ByteString m ()
 segmentsC asifType maybeTimestamp metas = do
   fileTime <- maybe (liftIO getPOSIXTime) return maybeTimestamp
   (_, _, hFilenames   ) <- IO.openTempFile Nothing "asif-filenames"
@@ -111,8 +111,5 @@ segmentsC asifType maybeTimestamp metas = do
     liftIO $ B.hPutBuilder hFilenames   $ B.byteString (meta ^. the @"meta" . the @"filename" & fromMaybe "" & T.encodeUtf8) <> B.word8 0
     liftIO $ B.hPutBuilder hCreateTimes $ B.int64LE $ (meta ^. the @"meta" . the @"createTime") <&> (^. microseconds) & fromMaybe 0
     liftIO $ B.hPutBuilder hFormats     $ B.byteString (meta ^. the @"meta" . the @"format" <&> tShowWhatever & fromMaybe "" & T.encodeUtf8) <> B.word8 0
-    return ()
 
-  let source = segmentsRawC asifType ((^. the @"payload") <$> moreMetas)
-
-  return source
+  segmentsRawC asifType ((^. the @"payload") <$> moreMetas)
