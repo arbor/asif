@@ -144,6 +144,10 @@ dumpSegment hOut i filename segment = do
               forM_ (word64ToList idx w64 []) $ \w32 -> do
                 let ipString = w32 & word32ToIpv4 & ipv4ToString
                 liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w32 <> ")"
+          Just (Known F.Bool) ->
+            forM_ (LBS.chunkBy 1 (segment ^. the @"payload")) $ \bs -> do
+              let w :: Bool = G.runGet G.get (LBS.take 1 (bs <> LBS.replicate 1 0))
+              liftIO $ IO.hPrint hOut w
           _ ->
             forM_ (zip (LBS.chunkBy 16 (segment ^. the @"payload")) [0 :: Int, 16..]) $ \(bs, j) -> do
               let bytes = mconcat (intersperse " " (reverse . take 2 . reverse . ('0':) . flip showHex "" <$> LBS.unpack bs))
