@@ -1,5 +1,5 @@
 name:           asif
-version:        4.0.1
+version:        4.1.0
 description:    Library for creating and querying segmented feeds. Please see <https://github.com/packetloop/asif#readme>
 synopsis:       Library for creating and querying segmented feeds
 category:       Services
