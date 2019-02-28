@@ -8,26 +8,28 @@
 module Arbor.File.Format.Asif.Extract
   ( formats
   , list
+  , listLazy
   , map
   , vectorBoxed
   , vectorUnboxed
   ) where
 
-import           Arbor.File.Format.Asif.Format.Type (Format)
-import           Arbor.File.Format.Asif.Whatever
-import           Control.Lens
-import           Data.Binary.Get
-import           Data.List                          hiding (map)
-import           Data.Text                          (Text)
-import           Data.Text.Encoding                 (decodeUtf8')
-import           Data.Text.Encoding.Error
-import           Prelude                            hiding (map)
+import Arbor.File.Format.Asif.Format.Type (Format)
+import Arbor.File.Format.Asif.Whatever
+import Control.Lens
+import Data.Binary.Get
+import Data.List                          hiding (map)
+import Data.Text                          (Text)
+import Data.Text.Encoding                 (decodeUtf8')
+import Data.Text.Encoding.Error
+import Prelude                            hiding (map)
 
-import qualified Data.Binary.Get                    as G
-import qualified Data.ByteString.Lazy               as LBS
-import qualified Data.Map.Strict                    as M
-import qualified Data.Vector                        as V
-import qualified Data.Vector.Unboxed                as VU
+import qualified Data.Binary.Get      as G
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.List            as L
+import qualified Data.Map.Strict      as M
+import qualified Data.Vector          as V
+import qualified Data.Vector.Unboxed  as VU
 
 vectorBoxed :: Get a -> LBS.ByteString -> V.Vector a
 vectorBoxed g = V.unfoldr step
@@ -48,6 +50,14 @@ list g = G.runGet go
           if not empty
             then (:) <$> g <*> go
             else return []
+
+listLazy :: Get a -> LBS.ByteString -> [Either String a]
+listLazy g bs =
+  flip L.unfoldr bs $ \acc ->
+    if LBS.null acc then Nothing
+    else case runGetOrFail g acc of
+      Left (_, _, err)  -> Just (Left err, LBS.empty)
+      Right (bs', _, a) -> Just (Right a, bs')
 
 map :: (Ord a) => LBS.ByteString -> Get a -> LBS.ByteString -> Get b -> M.Map a b
 map ks kf vs vf = foldr (\(k, v) m -> M.insert k v m) M.empty $ zip keys values
