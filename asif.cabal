@@ -136,6 +136,7 @@ test-suite asif-test
   other-modules:
       Arbor.File.Format.Asif.ByteString.BuilderSpec
       Arbor.File.Format.Asif.Data.IpSpec
+      Arbor.File.Format.Asif.ExtractSpec
       Arbor.File.Format.Asif.Format.SegmentValueSpec
       Arbor.File.Format.Asif.Format.TextSpec
       Arbor.File.Format.Asif.WriteSpec
