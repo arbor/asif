@@ -4,27 +4,29 @@ import Arbor.File.Format.Asif.Data.Ip
 import Arbor.File.Format.Asif.Format
 import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Write
-import Control.Monad.IO.Class         (liftIO)
+import Control.Monad.IO.Class                (liftIO)
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Resource
 import Data.Int
-import Data.Semigroup                 ((<>))
+import Data.Semigroup                        ((<>))
 import Data.Word
-import System.IO.Temp                 (openBinaryTempFile)
+import HaskellWorks.Data.Network.Ip.Validity (Canonical)
+import System.IO.Temp                        (openBinaryTempFile)
 
 import HaskellWorks.Hspec.Hedgehog
 import Hedgehog
 import Test.Hspec
 
-import qualified Data.Attoparsec.ByteString as AP
-import qualified Data.ByteString.Lazy       as LBS
-import qualified Data.IP                    as IP
-import qualified Data.Text.Lazy             as T
-import qualified Data.Text.Lazy.Encoding    as T
-import qualified Data.Thyme.Clock.POSIX     as TY
-import qualified Data.Thyme.Time.Core       as TY
-import qualified Hedgehog.Gen               as G
-import qualified Hedgehog.Range             as R
+import qualified Data.Attoparsec.ByteString        as AP
+import qualified Data.ByteString.Lazy              as LBS
+import qualified Data.Text.Lazy                    as T
+import qualified Data.Text.Lazy.Encoding           as T
+import qualified Data.Thyme.Clock.POSIX            as TY
+import qualified Data.Thyme.Time.Core              as TY
+import qualified HaskellWorks.Data.Network.Ip.Ipv4 as IP4
+import qualified HaskellWorks.Data.Network.Ip.Ipv6 as IP6
+import qualified Hedgehog.Gen                      as G
+import qualified Hedgehog.Range                    as R
 
 import qualified System.IO as IO
 
@@ -169,7 +171,7 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
 -----
 
   it "should write out and read back in a ipv4 segment" $ require $ property $ do
-    lst <- forAll $ G.list (R.linear 0 50) (word32ToIpv4 <$> G.word32 R.linearBounded)
+    lst <- forAll $ G.list (R.linear 0 50) genIpv4
 
     lbs <- asifContent "wxyz" Nothing (ipv4Segment id "ipv4") lst
 
@@ -187,6 +189,26 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
 
     (SIpv6 <$> lst) === seg
+
+  it "should write out and read back in a ipv4 block segment" $ require $ property $ do
+    lst <- forAll $ G.list (R.linear 0 50) genIpv4Block
+
+    lbs <- asifContent "wxyz" Nothing (ipv4BlockSegment id "ipv4Block") lst
+
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
+
+    (SIpv4Block <$> lst) === seg
+
+  it "should write out and read back in a ipv6 block segment" $ require $ property $ do
+    lst <- forAll $ G.list (R.linear 0 50) genIpv6Block
+
+    lbs <- asifContent "wxyz" Nothing (ipv6BlockSegment id "ipv6Block") lst
+
+    let Right segments = extractSegments (AP.string "seg:wxyz") lbs
+    [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
+
+    (SIpv6Block <$> lst) === seg
 
 -----
 
@@ -240,13 +262,28 @@ genTriple
   <*> G.word16 R.linearBounded
   <*> genNonNullText
 
-genIpv6 :: MonadGen m => m IP.IPv6
+genIpv4 :: MonadGen m => m IP4.IpAddress
+genIpv4 = word32ToIpv4 <$> G.word32 R.linearBounded
+
+genIpv6 :: MonadGen m => m IP6.IpAddress
 genIpv6 = word32x4ToIpv6 <$> gen4
   where
     gen4 :: MonadGen m => m (Word32, Word32, Word32, Word32)
     gen4 =
       let g = G.word32 R.linearBounded
       in (,,,) <$> g <*> g <*> g <*> g
+
+genIpv4Block :: MonadGen m => m (IP4.IpBlock Canonical)
+genIpv4Block = do
+  ip <- genIpv4
+  mask <- IP4.IpNetMask <$> G.word8 (R.linear 0 32)
+  pure . IP4.canonicaliseIpBlock $ IP4.IpBlock ip mask
+
+genIpv6Block :: MonadGen m => m (IP6.IpBlock Canonical)
+genIpv6Block = do
+  ip <- genIpv6
+  mask <- IP6.IpNetMask <$> G.word8 (R.linear 0 128)
+  pure . IP6.canonicaliseIpBlock $ IP6.IpBlock ip mask
 
 genNonNullText :: MonadGen m => m T.Text
 genNonNullText =

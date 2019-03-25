@@ -3,7 +3,7 @@
 module Arbor.File.Format.Asif.Format.Type
 where
 
-import           GHC.Generics
+import GHC.Generics
 
 data Format
   = Binary
@@ -17,6 +17,8 @@ data Format
   | Int64LE
   | Ipv4
   | Ipv6
+  | Ipv4Block
+  | Ipv6Block
   | Repeat Word Format
   | StringZ
   | Text

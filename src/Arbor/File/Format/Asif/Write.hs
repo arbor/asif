@@ -32,6 +32,8 @@ module Arbor.File.Format.Asif.Write
   , int64Segment
   , ipv4Segment
   , ipv6Segment
+  , ipv4BlockSegment
+  , ipv6BlockSegment
   , utcTimeMicrosSegment
 
   -- * Utility functions
@@ -56,18 +58,20 @@ import Data.Int
 import Data.Profunctor                           (lmap)
 import Data.Semigroup                            ((<>))
 import Data.Word
+import HaskellWorks.Data.Network.Ip.Validity     (Canonical (..))
 import System.IO                                 (Handle, hFlush)
 import System.IO.Temp                            (openTempFile)
 
-import qualified Arbor.File.Format.Asif.Format as F
-import qualified Data.ByteString               as BS
-import qualified Data.ByteString.Builder       as BB
-import qualified Data.ByteString.Lazy          as LBS
-import qualified Data.IP                       as IP
-import qualified Data.Text                     as T
-import qualified Data.Text.Encoding            as T
-import qualified Data.Text.Lazy                as TL
-import qualified Data.Text.Lazy.Encoding       as TE
+import qualified Arbor.File.Format.Asif.Format     as F
+import qualified Data.ByteString                   as BS
+import qualified Data.ByteString.Builder           as BB
+import qualified Data.ByteString.Lazy              as LBS
+import qualified Data.Text                         as T
+import qualified Data.Text.Encoding                as T
+import qualified Data.Text.Lazy                    as TL
+import qualified Data.Text.Lazy.Encoding           as TE
+import qualified HaskellWorks.Data.Network.Ip.Ipv4 as IP4
+import qualified HaskellWorks.Data.Network.Ip.Ipv6 as IP6
 
 import qualified Data.Thyme.Clock.POSIX as TY
 import qualified Data.Thyme.Time.Core   as TY
@@ -206,17 +210,30 @@ int64Segment = genericFold BB.int64LE (Known F.Int64LE)
 -----
 
 -- | Builds a segment of 'IPv4's.
-ipv4Segment :: MonadResource m => (a -> IP.IPv4) -> T.Text -> FoldM m a [Segment Handle]
+ipv4Segment :: MonadResource m => (a -> IP4.IpAddress) -> T.Text -> FoldM m a [Segment Handle]
 ipv4Segment f = genericFold BB.word32LE (Known F.Ipv4) (ipv4ToWord32 . f)
 
 -- | Builds a segment of 'IPv6's.
-ipv6Segment :: MonadResource m => (a -> IP.IPv6) -> T.Text -> FoldM m a [Segment Handle]
+ipv6Segment :: MonadResource m => (a -> IP6.IpAddress) -> T.Text -> FoldM m a [Segment Handle]
 ipv6Segment f = genericFold encoding (Known F.Ipv6) extract
     where
       -- I do not know why this is Big-Endian, when everything else is Little-Endian.
       encoding = Prelude.foldMap BB.word32BE
       extract = tupleToList . ipv6ToWord32x4 . f
-      tupleToList (w1,w2,w3,w4) = [w1,w2,w3,w4]
+
+-- | Builds a segment of IPv4 CIDR blocks
+ipv4BlockSegment :: MonadResource m => (a -> IP4.IpBlock Canonical) -> T.Text -> FoldM m a [Segment Handle]
+ipv4BlockSegment = genericFold encoding (Known F.Ipv4Block)
+    where
+      encoding (IP4.IpBlock (IP4.IpAddress ip) (IP4.IpNetMask block)) = BB.word32LE ip <> BB.word8 block
+
+-- | Builds a segment of IPv6 CIDR blocks
+ipv6BlockSegment :: MonadResource m => (a -> IP6.IpBlock Canonical) -> T.Text -> FoldM m a [Segment Handle]
+ipv6BlockSegment = genericFold encoding (Known F.Ipv6Block)
+    where
+      encoding (IP6.IpBlock ip (IP6.IpNetMask block)) =
+        let extract = Prelude.foldMap BB.word32BE . tupleToList . ipv6ToWord32x4
+        in extract ip <> BB.word8 block
 
 -----
 
@@ -248,3 +265,10 @@ genericExtract filen typ h = pure [segment h $ metaFilename filen <> metaFormat 
 
 genericFold :: MonadResource m =>  (a -> BB.Builder) -> Whatever F.Format -> (b -> a) -> T.Text -> FoldM m b [Segment Handle]
 genericFold enc fmt f t = lmap f $ FoldM (genericStep enc) (genericInitial t) (genericExtract t fmt)
+
+-------------------------------------------------------------------------------
+
+-- Private
+
+tupleToList :: (a,a,a,a) -> [a]
+tupleToList (w1,w2,w3,w4) = [w1,w2,w3,w4]

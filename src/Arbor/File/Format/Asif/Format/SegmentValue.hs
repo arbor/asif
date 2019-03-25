@@ -19,20 +19,24 @@ import qualified Data.ByteString.Lazy                   as LBS
 import qualified Data.ByteString.Lazy.Char8             as LBSC
 import           Data.Generics.Product.Any
 import           Data.Int
-import           Data.IP
 import           Data.Semigroup                         ((<>))
 import qualified Data.Text                              as T
 import           Data.Thyme.Time.Core
 import           Data.Word
 import           GHC.Generics                           (Generic)
+import qualified HaskellWorks.Data.Network.Ip.Ipv4      as IP4
+import qualified HaskellWorks.Data.Network.Ip.Ipv6      as IP6
+import           HaskellWorks.Data.Network.Ip.Validity
 
 data SegmentValue
   = SString LBS.ByteString
   | SBool Bool
   | SChar Char
   | STime UTCTime
-  | SIpv4 IPv4
-  | SIpv6 IPv6
+  | SIpv4 IP4.IpAddress
+  | SIpv6 IP6.IpAddress
+  | SIpv4Block (IP4.IpBlock Canonical)
+  | SIpv6Block (IP6.IpBlock Canonical)
   | SInt64 Int64
   | SInt32 Int32
   | SInt16 Int16
@@ -56,6 +60,12 @@ getWord32x4 = do
   c <- G.getWord32be
   d <- G.getWord32be
   return (a, b, c, d)
+
+getWord40 :: G.Get (Word32, Word8)
+getWord40 = (,) <$> G.getWord32le <*> G.getWord8
+
+getWord136 :: G.Get ((Word32, Word32, Word32, Word32), Word8)
+getWord136 = (,) <$> getWord32x4 <*> G.getWord8
 
 getValues :: Int64 -> G.Get a -> LBSC.ByteString -> [a]
 getValues n f bs =
@@ -90,6 +100,14 @@ getRawValue format bs =
 
     F.Ipv6 -> whenNonEmpty bs $
       bs & getValues 16 getWord32x4 <&> (SIpv6 . word32x4ToIpv6)
+
+    F.Ipv4Block -> whenNonEmpty bs $
+      let toIpBlock (w32,w8) = IP4.IpBlock (IP4.IpAddress w32) (IP4.IpNetMask w8)
+      in bs & getValues 5 getWord40 <&> (SIpv4Block . toIpBlock)
+
+    F.Ipv6Block -> whenNonEmpty bs $
+      let toIpBlock (w128,w8) = IP6.IpBlock (IP6.IpAddress w128) (IP6.IpNetMask w8)
+      in bs & getValues 17 getWord136 <&> (SIpv6Block . toIpBlock)
 
     F.Int64LE -> whenNonEmpty bs $
       bs & getValues 8 G.getInt64le <&> SInt64
