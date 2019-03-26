@@ -24,10 +24,9 @@ segmentValueToText = \case
   STime v -> T.pack $ show v
 
   SIpv4 v -> T.pack $ ipv4ToString v
-  SIpv6 v ->
-    case ipv6ToWord32x4 v of
-      (a, b, c, d) | a == 0 && b == 0 && c == 0xFFFF -> d & word32ToIpv4 & ipv4ToString & T.pack
-      _ -> T.pack $ ipv6ToString v
+  SIpv6 v -> T.pack $ ipv6toStringCollapseV4 v
+  SIpv4Block v -> T.pack $ ipv4CidrToString v
+  SIpv6Block v -> T.pack $ ipv6CidrToStringCollapseV4 v
 
   SInt64 v -> T.pack $ show v
   SInt32 v -> T.pack $ show v
@@ -48,7 +47,6 @@ segmentValueToText = \case
   SList vs -> vs <&> segmentValueToText & T.intercalate ","
 
   SUnknown _ v -> LBS.chunkBy 4 v <&> toHex & L.intersperse " " & mconcat
-
 
 toHex :: LBS.ByteString -> Text
 toHex bs =
