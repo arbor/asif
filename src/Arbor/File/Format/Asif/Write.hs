@@ -291,37 +291,40 @@ word64LookupSegment name f = lookupSegment name f (Known F.Word64LE) BB.word64LE
 
 -- | Creates a lookup segment for every input into a value in an "inner" dictionary segment.
 -- Missing values are represented as 'maxBound' for the key type.
-lookupSegment :: (MonadResource m, Ord b, Num i, Bounded i)
+lookupSegment :: (MonadResource m, Ord b, Eq i, Num i, Bounded i)
   => T.Text                     -- ^ Lookup segment name
   -> (a -> Maybe b)             -- ^ Extract "dictionary" value
   -> Whatever F.Format          -- ^ Format of lookup segment
   -> (i -> BB.Builder)          -- ^ Write a lookup value
   -> FoldM m b [Segment Handle] -- ^ A fold that represents a dictionary segment
   -> FoldM m a [Segment Handle]
-lookupSegment name f fmt enc inner =
-  FoldM lstep linit lextract <> handlesM (to f . _Just) inner
+lookupSegment name f fmt enc (FoldM rstep rinit rextract) =
+  FoldM lstep linit lextract
   where
     linit = do
       (_, _, h) <- openTempFile Nothing (T.unpack name)
-      pure (h, Map.empty, 0)
+      rx <- rinit
+      pure (h, Map.empty, 0, rx)
 
-    lstep (h, m, c) a =
+    lstep (h, m, c, rx) a =
       case f a of
         Nothing -> do
           liftIO $ BB.hPutBuilder h $ enc maxBound
-          pure (h, m, c)
+          pure (h, m, c, rx)
         Just b -> do
           let (v, c', m') = updateMap b c m
           liftIO $ BB.hPutBuilder h $ enc v
-          pure (h, m', c')
+          -- only push value to the dictionary fold if the map has been updated
+          -- so that the dictionary segment would only have unique values
+          rx' <- if c' == c then pure rx else rstep rx b
+          pure (h, m', c', rx')
 
-    lextract (h, _, _) = pure
-      [ segment h $ metaFilename name <> metaFormat fmt
-      ]
+    lextract (h, _, _, rx) = do
+      rres <- rextract rx
+      pure $ [ segment h $ metaFilename name <> metaFormat fmt] <> rres
 
     updateMap k c m =
       maybe (c, c+1, Map.insert k c m) (, c, m) (Map.lookup k m)
-
 
 -------------------------------------------------------------------------------
 
