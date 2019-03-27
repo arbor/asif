@@ -19,6 +19,7 @@ module Arbor.File.Format.Asif.Write
   -- $segments
   , lazyByteStringSegment
   , nullTerminatedStringSegment
+  , fixedLengthAsciiSegment
   , textSegment
   , asciiSegment
   , boolSegment
@@ -79,6 +80,7 @@ import qualified Data.Text.Lazy.Encoding           as TE
 import qualified HaskellWorks.Data.Network.Ip.Ipv4 as IP4
 import qualified HaskellWorks.Data.Network.Ip.Ipv6 as IP6
 import qualified Data.Map.Strict                   as Map
+import qualified Data.Foldable                     as Foldable
 
 import qualified Data.Thyme.Clock.POSIX as TY
 import qualified Data.Thyme.Time.Core   as TY
@@ -169,6 +171,12 @@ textSegment f = genericFold TE.encodeUtf8Builder (Known F.Text) (TL.fromStrict .
 -- | Builds a segment of 'Char's.
 asciiSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment Handle]
 asciiSegment = genericFold BB.char8 (Known F.Char)
+
+fixedLengthAsciiSegment :: MonadResource m => (a -> T.Text) -> T.Text -> Word -> FoldM m a [Segment Handle]
+fixedLengthAsciiSegment f name len =
+  genericFold (Foldable.foldMap BB.char8 . T.unpack) (Known (F.Repeat len F.Char)) (ensureLength . f) name
+  where
+    ensureLength = T.take (fromIntegral len) . T.justifyLeft 2 ' '
 
 -----
 
