@@ -1,5 +1,5 @@
 name:           asif
-version:        5.0.0
+version:        5.0.1
 description:    Library for creating and querying segmented feeds. Please see <https://github.com/packetloop/asif#readme>
 synopsis:       Library for creating and querying segmented feeds
 category:       Services
@@ -39,6 +39,7 @@ library
       Arbor.File.Format.Asif.Type
       Arbor.File.Format.Asif.Whatever
       Arbor.File.Format.Asif.Write
+      Arbor.File.Format.Asif.Format.Decoder
   other-modules:
       Arbor.File.Format.Asif.Format.SegmentValue
       Arbor.File.Format.Asif.Format.Type
