@@ -1,6 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-
-
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE TypeApplications      #-}
 -- |
 -- Module: Arbor.File.Format.Asif.Write
 --
@@ -19,6 +19,7 @@ module Arbor.File.Format.Asif.Write
   -- $segments
   , lazyByteStringSegment
   , nullTerminatedStringSegment
+  , fixedLengthAsciiSegment
   , textSegment
   , asciiSegment
   , boolSegment
@@ -35,6 +36,12 @@ module Arbor.File.Format.Asif.Write
   , ipv4BlockSegment
   , ipv6BlockSegment
   , utcTimeMicrosSegment
+
+  -- * Lookup segments
+  , lookupSegment
+  , word16LookupSegment
+  , word32LookupSegment
+  , word64LookupSegment
 
   -- * Utility functions
   -- $helper
@@ -72,6 +79,8 @@ import qualified Data.Text.Lazy                    as TL
 import qualified Data.Text.Lazy.Encoding           as TE
 import qualified HaskellWorks.Data.Network.Ip.Ipv4 as IP4
 import qualified HaskellWorks.Data.Network.Ip.Ipv6 as IP6
+import qualified Data.Map.Strict                   as Map
+import qualified Data.Foldable                     as Foldable
 
 import qualified Data.Thyme.Clock.POSIX as TY
 import qualified Data.Thyme.Time.Core   as TY
@@ -131,7 +140,6 @@ asifContentC asifType mTimestamp fld foldable = do
   segments <- lift $ foldM fld foldable
   segmentsC asifType mTimestamp segments
 
-----
 -- $segments
 --
 -- Use these to build 'FoldM's for the types you want to encode.
@@ -163,6 +171,12 @@ textSegment f = genericFold TE.encodeUtf8Builder (Known F.Text) (TL.fromStrict .
 -- | Builds a segment of 'Char's.
 asciiSegment :: MonadResource m => (a -> Char) -> T.Text -> FoldM m a [Segment Handle]
 asciiSegment = genericFold BB.char8 (Known F.Char)
+
+fixedLengthAsciiSegment :: MonadResource m => (a -> T.Text) -> T.Text -> Word -> FoldM m a [Segment Handle]
+fixedLengthAsciiSegment f name len =
+  genericFold (Foldable.foldMap BB.char8 . T.unpack) (Known (F.Repeat len F.Char)) (ensureLength . f) name
+  where
+    ensureLength = T.take (fromIntegral len) . T.justifyLeft 2 ' '
 
 -----
 
@@ -243,6 +257,82 @@ utcTimeMicrosSegment f = genericFold BB.int64LE (Known F.TimeMicros64LE) (fromTi
     where
       fromTime :: TY.UTCTime -> Int64
       fromTime = view (TY.posixTime . TY.microseconds)
+
+-- | Creates a lookup segment where index keys are 'Word16'
+-- Missing values are represented by 'maxBound :: Word16'
+--
+-- @
+-- word16LookupSegment name f = lookupSegment name f (Known F.Word16LE) BB.word16LE
+-- @
+word16LookupSegment :: (MonadResource m, Ord b)
+  => T.Text
+  -> (a -> Maybe b)
+  -> FoldM m b [Segment Handle]
+  -> FoldM m a [Segment Handle]
+word16LookupSegment name f = lookupSegment name f (Known F.Word16LE) BB.word16LE
+
+-- | Creates a lookup segment where index keys are 'Word32'
+-- Missing values are represented by 'maxBound :: Word32'
+--
+-- @
+-- word32LookupSegment name f = lookupSegment name f (Known F.Word32LE) BB.word32LE
+-- @
+word32LookupSegment :: (MonadResource m, Ord b)
+  => T.Text
+  -> (a -> Maybe b)
+  -> FoldM m b [Segment Handle]
+  -> FoldM m a [Segment Handle]
+word32LookupSegment name f = lookupSegment name f (Known F.Word32LE) BB.word32LE
+
+-- | Creates a lookup segment where index keys are 'Word64'
+-- Missing values are represented by 'maxBound :: Word64'
+--
+-- @
+-- word64LookupSegment name f = lookupSegment name f (Known F.Word64LE) BB.word64LE
+-- @
+word64LookupSegment :: (MonadResource m, Ord b)
+  => T.Text
+  -> (a -> Maybe b)
+  -> FoldM m b [Segment Handle]
+  -> FoldM m a [Segment Handle]
+word64LookupSegment name f = lookupSegment name f (Known F.Word64LE) BB.word64LE
+
+-- | Creates a lookup segment for every input into a value in an "inner" dictionary segment.
+-- Missing values are represented as 'maxBound' for the key type.
+lookupSegment :: (MonadResource m, Ord b, Eq i, Num i, Bounded i)
+  => T.Text                     -- ^ Lookup segment name
+  -> (a -> Maybe b)             -- ^ Extract "dictionary" value
+  -> Whatever F.Format          -- ^ Format of lookup segment
+  -> (i -> BB.Builder)          -- ^ Write a lookup value
+  -> FoldM m b [Segment Handle] -- ^ A fold that represents a dictionary segment
+  -> FoldM m a [Segment Handle]
+lookupSegment name f fmt enc (FoldM rstep rinit rextract) =
+  FoldM lstep linit lextract
+  where
+    linit = do
+      (_, _, h) <- openTempFile Nothing (T.unpack name)
+      rx <- rinit
+      pure (h, Map.empty, 0, rx)
+
+    lstep (h, m, c, rx) a =
+      case f a of
+        Nothing -> do
+          liftIO $ BB.hPutBuilder h $ enc maxBound
+          pure (h, m, c, rx)
+        Just b -> do
+          let (v, c', m') = updateMap b c m
+          liftIO $ BB.hPutBuilder h $ enc v
+          -- only push value to the dictionary fold if the map has been updated
+          -- so that the dictionary segment would only have unique values
+          rx' <- if c' == c then pure rx else rstep rx b
+          pure (h, m', c', rx')
+
+    lextract (h, _, _, rx) = do
+      rres <- rextract rx
+      pure $ [ segment h $ metaFilename name <> metaFormat fmt] <> rres
+
+    updateMap k c m =
+      maybe (c, c+1, Map.insert k c m) (, c, m) (Map.lookup k m)
 
 -------------------------------------------------------------------------------
 

@@ -4,10 +4,13 @@ import Arbor.File.Format.Asif.Data.Ip
 import Arbor.File.Format.Asif.Format
 import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Write
+import Control.Lens
 import Control.Monad.IO.Class                (liftIO)
 import Control.Monad.Trans.Class
 import Control.Monad.Trans.Resource
 import Data.Int
+import Data.List                             (elemIndex, nub)
+import Data.Maybe                            (catMaybes, fromMaybe)
 import Data.Semigroup                        ((<>))
 import Data.Word
 import HaskellWorks.Data.Network.Ip.Validity (Canonical)
@@ -29,6 +32,8 @@ import qualified Hedgehog.Gen                      as G
 import qualified Hedgehog.Range                    as R
 
 import qualified System.IO as IO
+
+import Debug.Trace
 
 
 {-# ANN module ("HLint: ignore Redundant do"  :: String) #-}
@@ -253,6 +258,33 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
     [names, times, types, seg] <- forAll $ pure (segmentValues <$> segments)
 
     [SText . T.encodeUtf8 . T.concat $ T.fromStrict <$> lst] === seg
+
+  it "should write and read back a lookup segment" $ require $ property $ do
+    let pairGen = (,) <$> genIpv4 <*> G.maybe (G.element ["US", "KZ", "AU"])
+    pairs <- forAll $ G.list (R.linear 1 100) pairGen
+
+    let countriesFold = nullTerminatedStringSegment id "countries"
+    let countriesLookup = word16LookupSegment "ip-to-countries" snd countriesFold
+
+    let resFold = ipv4Segment fst "ip" <> countriesLookup
+
+    content <- asifContent "ipct" Nothing resFold pairs
+
+    let Right segments = extractSegments (AP.string "seg:ipct") content
+
+    [names, times, types, ips, lkp, dict] <- forAll $ pure (segmentValues <$> segments)
+
+    let expectedVals    = pairs ^.. each . _2 . _Just & nub
+    let expectedLkpVals = pairs ^.. each . _2 . to (\x -> x >>= flip elemIndex expectedVals) . to (fromMaybe maxBound)
+
+    expectedDict <- forAll . pure $
+      expectedVals <&> (SString . T.encodeUtf8 . T.fromStrict)
+
+    expectedLkp <- forAll . pure $
+      expectedLkpVals <&> (SWord16 . fromIntegral)
+
+    dict === expectedDict
+    lkp  === expectedLkp
 
 
 genTriple :: MonadGen m => m (Int64, Word16, T.Text)
