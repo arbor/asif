@@ -7,7 +7,7 @@ module Arbor.File.Format.Asif.Format.SegmentValue
 where
 
 import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
-import           Arbor.File.Format.Asif.Data.Ip
+import           Arbor.File.Format.Asif.Format.Decoder  as D
 import qualified Arbor.File.Format.Asif.Format.Type     as F
 import           Arbor.File.Format.Asif.List            as L
 import           Arbor.File.Format.Asif.Segment
@@ -53,20 +53,6 @@ data SegmentValue
   | SUnknown T.Text LBS.ByteString
   deriving (Show, Eq, Generic)
 
-getWord32x4 :: G.Get (Word32, Word32, Word32, Word32)
-getWord32x4 = do
-  a <- G.getWord32be
-  b <- G.getWord32be
-  c <- G.getWord32be
-  d <- G.getWord32be
-  return (a, b, c, d)
-
-getWord40 :: G.Get (Word32, Word8)
-getWord40 = (,) <$> G.getWord32le <*> G.getWord8
-
-getWord136 :: G.Get ((Word32, Word32, Word32, Word32), Word8)
-getWord136 = (,) <$> getWord32x4 <*> G.getWord8
-
 getValues :: Int64 -> G.Get a -> LBSC.ByteString -> [a]
 getValues n f bs =
   let getValue bs' = G.runGet f (LBS.take n (bs' <> LBS.replicate n 0))
@@ -81,33 +67,28 @@ getRawValue format bs =
         else init (LBS.split 0 bs) <&> SString
 
     F.Bool -> whenNonEmpty bs $
-      let toBool = (/=) 0
-      in bs & getValues 1 G.getWord8 <&> (SBool . toBool)
+      bs & getValues 1 D.getBool <&> SBool
 
     F.Char -> whenNonEmpty bs $
       LBSC.unpack bs <&> SChar
 
     F.TimeMillis64LE -> whenNonEmpty bs $
-      let toTime ms = (ms * 1000) ^. from microseconds & posixSecondsToUTCTime
-      in bs & getValues 8 G.getInt64le <&> (STime . toTime)
+      bs & getValues 8 D.getTimeMillis <&> STime
 
     F.TimeMicros64LE -> whenNonEmpty bs $
-      let toTime ms = ms ^. from microseconds & posixSecondsToUTCTime
-      in bs & getValues 8 G.getInt64le <&> (STime . toTime)
+      bs & getValues 8 D.getTimeMicros <&> STime
 
     F.Ipv4 -> whenNonEmpty bs $
-      bs & getValues 4 G.getWord32le <&> (SIpv4 . word32ToIpv4)
+      bs & getValues 4 D.getIpv4 <&> SIpv4
 
     F.Ipv6 -> whenNonEmpty bs $
-      bs & getValues 16 getWord32x4 <&> (SIpv6 . word32x4ToIpv6)
+      bs & getValues 16 D.getIpv6 <&> SIpv6
 
     F.Ipv4Block -> whenNonEmpty bs $
-      let toIpBlock (w32,w8) = IP4.IpBlock (IP4.IpAddress w32) (IP4.IpNetMask w8)
-      in bs & getValues 5 getWord40 <&> (SIpv4Block . toIpBlock)
+      bs & getValues 5 D.getIpv4Block <&> SIpv4Block
 
     F.Ipv6Block -> whenNonEmpty bs $
-      let toIpBlock (w128,w8) = IP6.IpBlock (IP6.IpAddress w128) (IP6.IpNetMask w8)
-      in bs & getValues 17 getWord136 <&> (SIpv6Block . toIpBlock)
+      bs & getValues 17 D.getIpv6Block <&> SIpv6Block
 
     F.Int64LE -> whenNonEmpty bs $
       bs & getValues 8 G.getInt64le <&> SInt64
