@@ -1,5 +1,4 @@
 with-compiler: ghc-8.4.4
-
 packages: .
 
 allow-newer: QuickCheck
