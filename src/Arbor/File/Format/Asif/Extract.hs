@@ -10,6 +10,7 @@ module Arbor.File.Format.Asif.Extract
   , list
   , listLazy
   , map
+  , lookupTable
   , vectorBoxed
   , vectorUnboxed
   ) where
@@ -26,6 +27,7 @@ import Prelude                            hiding (map)
 
 import qualified Data.Binary.Get      as G
 import qualified Data.ByteString.Lazy as LBS
+import qualified Data.IntMap.Strict   as IM
 import qualified Data.List            as L
 import qualified Data.Map.Strict      as M
 import qualified Data.Vector          as V
@@ -64,6 +66,10 @@ map ks kf vs vf = foldr (\(k, v) m -> M.insert k v m) M.empty $ zip keys values
   where
     keys = list kf ks
     values = list vf vs
+
+lookupTable :: LBS.ByteString -> Get a -> IM.IntMap a
+lookupTable bs getter = IM.fromList $ zip [0..] values
+  where values = list getter bs
 
 formats :: LBS.ByteString -> [Maybe (Whatever Format)]
 formats bs = LBS.split 0 bs <&> decodeUtf8' . LBS.toStrict <&> convert
