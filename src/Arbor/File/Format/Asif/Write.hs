@@ -316,7 +316,7 @@ lookupSegment name f fmt enc (FoldM rstep rinit rextract) =
       rx <- rinit
       pure (h, Map.empty, 0, rx)
 
-    lstep (h, m, c, rx) a =
+    lstep (!h, !m, !c, !rx) a =
       case f a of
         Nothing -> do
           liftIO $ BB.hPutBuilder h $ enc maxBound
@@ -329,11 +329,11 @@ lookupSegment name f fmt enc (FoldM rstep rinit rextract) =
           rx' <- if c' == c then pure rx else rstep rx b
           pure (h, m', c', rx')
 
-    lextract (h, _, _, rx) = do
+    lextract (!h, _, _, !rx) = do
       rres <- rextract rx
       pure $ [ segment h $ metaFilename name <> metaFormat fmt] <> rres
 
-    updateMap k c m =
+    updateMap !k !c !m =
       maybe (c, c+1, Map.insert k c m) (, c, m) (Map.lookup k m)
 
 -------------------------------------------------------------------------------
@@ -348,12 +348,12 @@ genericInitial name = do
   pure h
 
 genericStep :: MonadResource m => (a -> BB.Builder) -> Handle -> a -> m Handle
-genericStep enc h b = do
+genericStep enc !h !b = do
   liftIO $ BB.hPutBuilder h $ enc b
   pure h
 
 genericExtract :: MonadResource m => T.Text -> Whatever F.Format -> Handle -> m [Segment Handle]
-genericExtract filen typ h = pure [segment h $ metaFilename filen <> metaFormat typ]
+genericExtract filen typ h = liftIO (hFlush h) >> pure [segment h $ metaFilename filen <> metaFormat typ]
 
 genericFold :: MonadResource m =>  (a -> BB.Builder) -> Whatever F.Format -> (b -> a) -> T.Text -> FoldM m b [Segment Handle]
 genericFold enc fmt f t = lmap f $ FoldM (genericStep enc) (genericInitial t) (genericExtract t fmt)
