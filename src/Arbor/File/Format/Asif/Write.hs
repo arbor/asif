@@ -1,6 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE TypeApplications      #-}
 -- |
 -- Module: Arbor.File.Format.Asif.Write
 --
@@ -49,6 +48,9 @@ module Arbor.File.Format.Asif.Write
   , genericStep
   , genericExtract
   , genericFold
+
+  -- * Reexports
+  , MonadActive
   )
 where
 
@@ -61,7 +63,7 @@ import Data.Conduit.Lazy                         (MonadActive, lazyConsume)
 import Control.Foldl
 import Control.Lens
 import Control.Monad.IO.Class                    (liftIO)
-import Control.Monad.Trans.Resource              (MonadResource, liftResourceT)
+import Control.Monad.Trans.Resource              (MonadResource)
 import Data.Int
 import Data.Profunctor                           (lmap)
 import Data.Semigroup                            ((<>))
