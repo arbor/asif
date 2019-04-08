@@ -57,10 +57,11 @@ import Arbor.File.Format.Asif.Data.Ip            (ipv4ToWord32, ipv6ToWord32x4)
 import Arbor.File.Format.Asif.Type
 import Arbor.File.Format.Asif.Whatever           (Whatever (..))
 import Conduit
+import Data.Conduit.Lazy                         (MonadActive, lazyConsume)
 import Control.Foldl
 import Control.Lens
 import Control.Monad.IO.Class                    (liftIO)
-import Control.Monad.Trans.Resource              (MonadResource)
+import Control.Monad.Trans.Resource              (MonadResource, liftResourceT)
 import Data.Int
 import Data.Profunctor                           (lmap)
 import Data.Semigroup                            ((<>))
@@ -118,16 +119,15 @@ writeAsif hOutput asifType mTimestamp fld foldable = do
 
 -- | Builds a lazy ASIF bytestring.
 -- Streams the input foldable if possible.
-asifContent :: (Foldable f, MonadResource m)
+asifContent :: (Foldable f, MonadResource m, MonadUnliftIO m, MonadActive m)
   => String
   -> Maybe TY.POSIXTime
   -> FoldM m a [Segment Handle]
   -> f a
   -> m LBS.ByteString
 asifContent asifType mTimestamp fld foldable =
-  runConduit
-    $  asifContentC asifType mTimestamp fld foldable
-    .| sinkLazy
+  LBS.fromChunks <$> lazyConsume (asifContentC asifType mTimestamp fld foldable)
+
 
 -- | Returns ASIF content as a conduit
 asifContentC :: (Foldable f, MonadResource m)
