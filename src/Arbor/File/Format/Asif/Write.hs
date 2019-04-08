@@ -320,11 +320,11 @@ lookupSegment name f fmt enc (FoldM rstep rinit rextract) =
           liftIO $ BB.hPutBuilder h $ enc maxBound
           pure (h, m, c, rx)
         Just b -> do
-          let (v, c', m') = updateMap b c m
+          let (!v, !c', !m') = updateMap b c m
           liftIO $ BB.hPutBuilder h $ enc v
           -- only push value to the dictionary fold if the map has been updated
           -- so that the dictionary segment would only have unique values
-          rx' <- if c' == c then pure rx else rstep rx b
+          !rx' <- if c' == c then pure rx else rstep rx b
           pure (h, m', c', rx')
 
     lextract (h, _, _, rx) = do
