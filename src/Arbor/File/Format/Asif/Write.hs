@@ -314,7 +314,7 @@ lookupSegment name f fmt enc (FoldM rstep rinit rextract) =
       rx <- rinit
       pure (h, Map.empty, 0, rx)
 
-    lstep (h, m, c, rx) a =
+    lstep (!h, !m, !c, !rx) a =
       case f a of
         Nothing -> do
           liftIO $ BB.hPutBuilder h $ enc maxBound
@@ -331,7 +331,7 @@ lookupSegment name f fmt enc (FoldM rstep rinit rextract) =
       rres <- rextract rx
       pure $ [ segment h $ metaFilename name <> metaFormat fmt] <> rres
 
-    updateMap k c m =
+    updateMap !k !c !m =
       maybe (c, c+1, Map.insert k c m) (, c, m) (Map.lookup k m)
 
 -------------------------------------------------------------------------------
