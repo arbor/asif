@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           asif
-version:        5.0.2
+version:        6.0.0
 description:    Library for creating and querying segmented feeds. Please see <https://github.com/arbor/asif#readme>
 synopsis:       Library for creating and querying segmented feeds
 category:       Services
@@ -71,7 +71,6 @@ library
     Arbor.File.Format.Asif.Type
     Arbor.File.Format.Asif.Whatever
     Arbor.File.Format.Asif.Write
-    Arbor.File.Format.Asif.Format.Decoder
   other-modules:
     Arbor.File.Format.Asif.Format.SegmentValue
     Arbor.File.Format.Asif.Format.Type

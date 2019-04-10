@@ -6,27 +6,28 @@
 module Arbor.File.Format.Asif.Format.SegmentValue
 where
 
+import Arbor.File.Format.Asif.List           as L
+import Arbor.File.Format.Asif.Segment
+import Arbor.File.Format.Asif.Whatever
+import Control.Lens
+import Data.Generics.Product.Any
+import Data.Int
+import Data.Semigroup                        ((<>))
+import Data.Thyme.Time.Core
+import Data.Word
+import GHC.Generics                          (Generic)
+import HaskellWorks.Data.Network.Ip.Validity
+
 import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
-import           Arbor.File.Format.Asif.Format.Decoder  as D
 import qualified Arbor.File.Format.Asif.Format.Type     as F
-import           Arbor.File.Format.Asif.List            as L
-import           Arbor.File.Format.Asif.Segment
-import           Arbor.File.Format.Asif.Whatever
-import           Control.Lens
+import qualified Arbor.File.Format.Asif.Get             as D
 import qualified Data.Binary                            as G
 import qualified Data.Binary.Get                        as G
 import qualified Data.ByteString.Lazy                   as LBS
 import qualified Data.ByteString.Lazy.Char8             as LBSC
-import           Data.Generics.Product.Any
-import           Data.Int
-import           Data.Semigroup                         ((<>))
 import qualified Data.Text                              as T
-import           Data.Thyme.Time.Core
-import           Data.Word
-import           GHC.Generics                           (Generic)
 import qualified HaskellWorks.Data.Network.Ip.Ipv4      as IP4
 import qualified HaskellWorks.Data.Network.Ip.Ipv6      as IP6
-import           HaskellWorks.Data.Network.Ip.Validity
 
 data SegmentValue
   = SString LBS.ByteString
