@@ -9,29 +9,29 @@ module App.Dump
   ) where
 
 import Arbor.File.Format.Asif.Data.Ip
-import Arbor.File.Format.Asif.Format.Decoder as D
 import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Whatever
 import Control.Lens
 import Control.Monad
-import Control.Monad.IO.Class                (liftIO)
-import Control.Monad.Trans.Resource          (MonadResource)
-import Data.Char                             (isPrint)
+import Control.Monad.IO.Class          (liftIO)
+import Control.Monad.Trans.Resource    (MonadResource)
+import Data.Char                       (isPrint)
 import Data.Generics.Product.Any
 import Data.List
-import Data.Monoid                           ((<>))
-import Data.Text                             (Text)
-import Data.Thyme.Format                     (formatTime)
+import Data.Monoid                     ((<>))
+import Data.Text                       (Text)
+import Data.Thyme.Format               (formatTime)
 import Data.Thyme.Time.Core
 import Data.Word
 import HaskellWorks.Data.Bits.BitShow
 import HaskellWorks.Data.Bits.BitWise
-import Numeric                               (showHex)
-import System.IO                             (Handle)
-import System.Locale                         (defaultTimeLocale, iso8601DateFormat)
+import Numeric                         (showHex)
+import System.IO                       (Handle)
+import System.Locale                   (defaultTimeLocale, iso8601DateFormat)
 
 import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
 import qualified Arbor.File.Format.Asif.Format          as F
+import qualified Arbor.File.Format.Asif.Get             as D
 import qualified Data.Binary                            as G
 import qualified Data.Binary.Get                        as G
 import qualified Data.Bits                              as B
