@@ -44,7 +44,7 @@ magicPrefix :: IsString a => a
 magicPrefix = "seg:"
 
 -- magic file identifier for segmented gan feeds.
--- 7 characters. the 8th is meant to be filled in based on feed.
+-- 16 characters. the last 12 are meant to be filled in based on feed.
 magicString :: String -> LC8.ByteString
 magicString s = if LBS.length truncatedMagic < LBS.length rawMagic
   then truncatedMagic

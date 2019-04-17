@@ -12,10 +12,10 @@ Library for creating and querying segmented feeds.
 |Segmented OSI Model |
 +--------------------+
 
- magic, where XXXX is a feed type
-+---------------------+-------------+
-| "seg:XXXX" [char:8] | ver: uint64 |
-+---------------------+-------------+
+ magic, where XXXX is a feed type (0-12 chars)
++----------------------+
+| "seg:XXXX" [char:16] |
++----------------------+
 
 c -- countries
 a -- asns
