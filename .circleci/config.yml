@@ -25,7 +25,11 @@ workflows:
                   - homebrew-itself-cache
             - run:
                 name: Install GHC
-                command: brew install jq md5sha1sum ghc cabal-install
+                command: |
+                  uname -a
+                  brew tap haskell-works/homebrew-haskell-works git@github.com:haskell-works/homebrew-haskell-works.git
+                  brew update
+                  brew install jq md5sha1sum ghc cabal-install cabal-cache
 
             - save_cache:
                 key: homebrew-itself-cache
