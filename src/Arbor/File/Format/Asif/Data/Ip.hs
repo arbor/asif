@@ -13,13 +13,16 @@ module Arbor.File.Format.Asif.Data.Ip
   , ipv4ToWord32
   , ipv6ToWord32x4
   , ipv4ToIpv6
+  , word64ToIpList
   ) where
 
 import Arbor.File.Format.Asif.Data.Read
 import Control.Lens                     ((&))
 import Data.Word
+import HaskellWorks.Data.Bits.BitWise
 import Text.Read
 
+import qualified Data.Bits                         as B
 import qualified HaskellWorks.Data.Network.Ip.Ipv4 as IP4
 import qualified HaskellWorks.Data.Network.Ip.Ipv6 as IP6
 
@@ -77,3 +80,13 @@ ipv6ToWord32x4 (IP6.IpAddress w128) = w128
 
 ipv4ToIpv6 :: IP4.IpAddress -> IP6.IpAddress
 ipv4ToIpv6 = IP6.fromIpv4
+
+-- This takes a Word64 from a Bitmap, and converts it to a list of IPs.
+-- The integer argument is an index into the bitmap
+word64ToIpList :: Int -> Word64 -> [Word32] -> [Word32]
+word64ToIpList _ 0 = id
+word64ToIpList o w = (ip:) . word64ToIpList o (w .&. comp b)
+  where p  = B.countTrailingZeros w
+        hi = o .<. 6
+        ip = fromIntegral (p .|. hi)
+        b  = 1 .<. fromIntegral p

@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           asif
-version:        6.0.0
+version:        6.0.1
 description:    Library for creating and querying segmented feeds. Please see <https://github.com/arbor/asif#readme>
 synopsis:       Library for creating and querying segmented feeds
 category:       Services

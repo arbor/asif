@@ -12,8 +12,10 @@ module Arbor.File.Format.Asif.Extract
   , map
   , vectorBoxed
   , vectorUnboxed
+  , bitmap
   ) where
 
+import Arbor.File.Format.Asif.Data.Ip
 import Arbor.File.Format.Asif.Format.Type (Format)
 import Arbor.File.Format.Asif.Whatever
 import Control.Lens
@@ -24,12 +26,14 @@ import Data.Text.Encoding                 (decodeUtf8')
 import Data.Text.Encoding.Error
 import Prelude                            hiding (map)
 
-import qualified Data.Binary.Get      as G
-import qualified Data.ByteString.Lazy as LBS
-import qualified Data.List            as L
-import qualified Data.Map.Strict      as M
-import qualified Data.Vector          as V
-import qualified Data.Vector.Unboxed  as VU
+import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
+import qualified Data.Binary.Get                        as G
+import qualified Data.ByteString.Lazy                   as LBS
+import qualified Data.List                              as L
+import qualified Data.Map.Strict                        as M
+import qualified Data.Vector                            as V
+import qualified Data.Vector.Unboxed                    as VU
+import qualified HaskellWorks.Data.Network.Ip.Ipv4      as IP4
 
 vectorBoxed :: Get a -> LBS.ByteString -> V.Vector a
 vectorBoxed g = V.unfoldr step
@@ -71,3 +75,8 @@ formats bs = LBS.split 0 bs <&> decodeUtf8' . LBS.toStrict <&> convert
         convert (Left _)   = Nothing
         convert (Right "") = Nothing
         convert (Right t)  = Just (tReadWhatever t)
+
+bitmap :: LBS.ByteString -> [IP4.IpAddress]
+bitmap lbs =
+  zip [0..] (G.runGet G.getWord64le <$> LBS.chunkBy 8 lbs) >>= \(idx, w64) ->
+    word64ToIpList idx w64 [] <&> word32ToIpv4
