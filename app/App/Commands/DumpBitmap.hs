@@ -8,8 +8,8 @@ module App.Commands.DumpBitmap
   ) where
 
 import App.Commands.Options.Type
-import App.Dump
 import Arbor.File.Format.Asif.Data.Ip
+import Arbor.File.Format.Asif.Extract (bitmap)
 import Arbor.File.Format.Asif.IO
 import Control.Lens
 import Control.Monad
@@ -19,10 +19,8 @@ import Data.Generics.Product.Any
 import Data.Monoid                    ((<>))
 import Options.Applicative
 
-import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
-import qualified Data.Binary.Get                        as G
-import qualified Data.ByteString.Lazy                   as LBS
-import qualified System.IO                              as IO
+import qualified Data.ByteString.Lazy as LBS
+import qualified System.IO            as IO
 
 {-# ANN module ("HLint: ignore Reduce duplication"  :: String) #-}
 {-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
@@ -52,7 +50,7 @@ runDump opt = do
 
   contents <- liftIO $ LBS.hGetContents hIn
 
-  forM_ (zip [0..] (G.runGet G.getWord64le <$> LBS.chunkBy 8 contents)) $ \(idx, w64) ->
-    forM_ (word64ToList idx w64 []) $ \w32 -> do
-      let ipString = w32 & word32ToIpv4 & ipv4ToString
-      liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w32 <> ")"
+  forM_ (bitmap contents) $ \ip ->
+    let ipString = ipv4ToString ip
+        w32 = ipv4ToWord32 ip
+    in liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w32 <> ")"

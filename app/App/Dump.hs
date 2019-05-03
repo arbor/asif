@@ -5,10 +5,10 @@
 
 module App.Dump
   ( dumpSegment
-  , word64ToList
   ) where
 
 import Arbor.File.Format.Asif.Data.Ip
+import Arbor.File.Format.Asif.Extract
 import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Whatever
 import Control.Lens
@@ -22,9 +22,7 @@ import Data.Monoid                     ((<>))
 import Data.Text                       (Text)
 import Data.Thyme.Format               (formatTime)
 import Data.Thyme.Time.Core
-import Data.Word
 import HaskellWorks.Data.Bits.BitShow
-import HaskellWorks.Data.Bits.BitWise
 import Numeric                         (showHex)
 import System.IO                       (Handle)
 import System.Locale                   (defaultTimeLocale, iso8601DateFormat)
@@ -34,7 +32,6 @@ import qualified Arbor.File.Format.Asif.Format          as F
 import qualified Arbor.File.Format.Asif.Get             as D
 import qualified Data.Binary                            as G
 import qualified Data.Binary.Get                        as G
-import qualified Data.Bits                              as B
 import qualified Data.ByteString.Lazy                   as LBS
 import qualified Data.ByteString.Lazy.Char8             as LBSC
 import qualified Data.Text                              as T
@@ -49,13 +46,6 @@ import qualified System.IO                              as IO
 showTime :: FormatTime t => t -> String
 showTime = formatTime defaultTimeLocale (iso8601DateFormat (Just "%H:%M:%S %Z"))
 
-word64ToList :: Int -> Word64 -> [Word32] -> [Word32]
-word64ToList _ 0 = id
-word64ToList o w = (ip:) . word64ToList o (w .&. comp b)
-  where p  = B.countTrailingZeros w
-        hi = o .<. 6
-        ip = fromIntegral (p .|. hi)
-        b  = 1 .<. fromIntegral p
 
 dumpSegment :: MonadResource m => Handle -> Int -> Text -> Segment LBS.ByteString -> m ()
 dumpSegment hOut i filename segment = do
@@ -163,10 +153,10 @@ dumpSegment hOut i filename segment = do
       liftIO $ IO.hPutStrLn hOut (bitShow (segment ^. the @"payload"))
 
     Just (Known F.Bitmap) ->
-      forM_ (zip [0..] (G.runGet G.getWord64le <$> LBS.chunkBy 8 (segment ^. the @"payload"))) $ \(idx, w64) ->
-        forM_ (word64ToList idx w64 []) $ \w32 -> do
-          let ipString = w32 & word32ToIpv4 & ipv4ToString
-          liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w32 <> ")"
+      forM_ (bitmap $ segment ^. the @"payload") $ \ip ->
+        let ipString = ipv4ToString ip
+            w32 = ipv4ToWord32 ip
+        in liftIO $ IO.hPutStrLn hOut $ ipString <> replicate (16 - length ipString) ' ' <> "(" <> show w32 <> ")"
 
     Just (Known F.Bool) ->
       forM_ (LBS.chunkBy 1 (segment ^. the @"payload")) $ \bs -> do
