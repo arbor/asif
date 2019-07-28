@@ -137,8 +137,11 @@ asifContentC :: (Foldable f, MonadResource m)
   -> f a
   -> ConduitT () BS.ByteString m ()
 asifContentC asifType mTimestamp fld foldable = do
+  liftIO . putStrLn $ "about to call segments"
   segments <- lift $ foldM fld foldable
+  liftIO . putStrLn $ "about to call segmentsC"
   segmentsC asifType mTimestamp segments
+  liftIO . putStrLn $ "called segments"
 
 -- $segments
 --
