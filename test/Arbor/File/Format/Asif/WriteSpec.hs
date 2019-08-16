@@ -1,3 +1,6 @@
+{-# LANGUAGE CPP   #-}
+{-# LANGUAGE GADTs #-}
+
 module Arbor.File.Format.Asif.WriteSpec where
 
 import Arbor.File.Format.Asif.Data.Ip
@@ -6,11 +9,10 @@ import Arbor.File.Format.Asif.Segment
 import Arbor.File.Format.Asif.Write
 import Control.Lens
 import Control.Monad.IO.Class                (liftIO)
-import Control.Monad.Trans.Class
 import Control.Monad.Trans.Resource
 import Data.Int
 import Data.List                             (elemIndex, nub)
-import Data.Maybe                            (catMaybes, fromMaybe)
+import Data.Maybe                            (fromMaybe)
 import Data.Semigroup                        ((<>))
 import Data.Word
 import HaskellWorks.Data.Network.Ip.Validity (Canonical)
@@ -24,7 +26,6 @@ import qualified Data.Attoparsec.ByteString        as AP
 import qualified Data.ByteString.Lazy              as LBS
 import qualified Data.Text.Lazy                    as T
 import qualified Data.Text.Lazy.Encoding           as T
-import qualified Data.Thyme.Clock.POSIX            as TY
 import qualified Data.Thyme.Time.Core              as TY
 import qualified HaskellWorks.Data.Network.Ip.Ipv4 as IP4
 import qualified HaskellWorks.Data.Network.Ip.Ipv6 as IP6
@@ -32,9 +33,6 @@ import qualified Hedgehog.Gen                      as G
 import qualified Hedgehog.Range                    as R
 
 import qualified System.IO as IO
-
-import Debug.Trace
-
 
 {-# ANN module ("HLint: ignore Redundant do"  :: String) #-}
 
@@ -270,24 +268,25 @@ spec = describe "Arbor.File.Format.Asif.Write" $ do
 
     content <- asifContent "ipct" Nothing resFold pairs
 
-    let Right segments = extractSegments (AP.string "seg:ipct") content
+    case extractSegments (AP.string "seg:ipct") content of
+      Right segments -> do
+        [names, times, types, ips, lkp, dict] <- forAll $ pure (segmentValues <$> segments)
 
-    [names, times, types, ips, lkp, dict] <- forAll $ pure (segmentValues <$> segments)
+        let expectedVals    = pairs ^.. each . _2 . _Just & nub
+        let expectedLkpVals = pairs ^.. each . _2 . to (\x -> x >>= flip elemIndex expectedVals) . to (fromMaybe maxBound)
 
-    let expectedVals    = pairs ^.. each . _2 . _Just & nub
-    let expectedLkpVals = pairs ^.. each . _2 . to (\x -> x >>= flip elemIndex expectedVals) . to (fromMaybe maxBound)
+        expectedDict <- forAll . pure $
+          expectedVals <&> (SString . T.encodeUtf8 . T.fromStrict)
 
-    expectedDict <- forAll . pure $
-      expectedVals <&> (SString . T.encodeUtf8 . T.fromStrict)
+        expectedLkp <- forAll . pure $
+          expectedLkpVals <&> (SWord16 . fromIntegral)
 
-    expectedLkp <- forAll . pure $
-      expectedLkpVals <&> (SWord16 . fromIntegral)
-
-    dict === expectedDict
-    lkp  === expectedLkp
+        dict === expectedDict
+        lkp  === expectedLkp
+      Left _ -> failure
 
 
-genTriple :: MonadGen m => m (Int64, Word16, T.Text)
+genTriple :: (MonadGen m, GenBase m ~ Identity) => m (Int64, Word16, T.Text)
 genTriple
   = (,,)
   <$> G.int64 R.linearBounded
@@ -317,13 +316,18 @@ genIpv6Block = do
   mask <- IP6.IpNetMask <$> G.word8 (R.linear 0 128)
   pure . IP6.canonicaliseIpBlock $ IP6.IpBlock ip mask
 
-genNonNullText :: MonadGen m => m T.Text
+#if MIN_VERSION_hedgehog(1, 0, 0)
+genNonNullText :: (MonadGen m, GenBase m ~ Identity) => m T.Text
 genNonNullText =
   T.fromStrict <$> G.text (R.linear 0 32) (G.filter (/= toEnum 0) G.unicode)
+#else
+#endif
 
-
+#if MIN_VERSION_hedgehog(1, 0, 0)
+#else
 instance MonadResource m => MonadResource (PropertyT m) where
   liftResourceT = lift . liftResourceT
+#endif
 
 -- I have no idea how this doesn't exist, but whatever. ¯\_(ツ)_/¯
 instance MonadResource IO where
