@@ -118,6 +118,7 @@ test-suite asif-test
   import: common-deps
   type: exitcode-stdio-1.0
   main-is: Spec.hs
+  build-tools: hspec-discover
   other-modules:
     Arbor.File.Format.Asif.ByteString.BuilderSpec
     Arbor.File.Format.Asif.Data.IpSpec
