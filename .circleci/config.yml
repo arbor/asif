@@ -13,7 +13,7 @@ executors:
 workflows:
   multiple-ghc-build:
     jobs:
-      - haskell/build:
+      - haskell/build-with-binary-cache:
           name: Darwin
           executor: darwin
           run-tests: false
@@ -40,15 +40,15 @@ workflows:
                   tar zxvf cabal-plan_x86_osx.tar.gz -C /usr/local/bin cabal-plan
                   rm cabal-plan_x86_osx.tar.gz
 
-      - haskell/build:
+      - haskell/build-with-binary-cache:
           name: GHC 8.2.2
           executor: haskell/ghc-8_2_2
 
-      - haskell/build:
+      - haskell/build-with-binary-cache:
           name: GHC 8.4.4
           executor: haskell/ghc-8_4_4
 
-      # - haskell/build:
+      # - haskell/build-with-binary-cache:
       #     name: GHC 8.6.3
       #     executor: haskell/ghc-8_6_3
 
