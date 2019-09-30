@@ -6,7 +6,7 @@ module Gen.Feed
   ) where
 
 import Data.Word
-import HaskellWorks.Data.Network.Ip.Internal
+import HaskellWorks.Data.Network.Ip.Internal.Appar
 import HaskellWorks.Data.Network.Ip.Ipv4
 import Hedgehog
 
