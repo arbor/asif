@@ -1,6 +1,6 @@
 cabal-version:  2.2
 name:           asif
-version:        6.0.1
+version:        6.0.2
 description:    Library for creating and querying segmented feeds. Please see <https://github.com/arbor/asif#readme>
 synopsis:       Library for creating and querying segmented feeds
 category:       Services
@@ -38,7 +38,7 @@ common common-deps
     , foldl
     , generic-lens
     , hw-bits
-    , hw-ip
+    , hw-ip >= 2.3.2.0
     , lens
     , network
     , old-locale
@@ -118,7 +118,7 @@ test-suite asif-test
   import: common-deps
   type: exitcode-stdio-1.0
   main-is: Spec.hs
-  build-tools: hspec-discover
+  build-tool-depends: hspec-discover:hspec-discover
   other-modules:
     Arbor.File.Format.Asif.ByteString.BuilderSpec
     Arbor.File.Format.Asif.Data.IpSpec
