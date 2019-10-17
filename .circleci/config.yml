@@ -64,9 +64,13 @@ workflows:
           name: GHC 8.4.4
           executor: haskell/ghc-8_4_4
 
-      - haskell/build-with-cci-cache:
+      - haskell/build:
           name: GHC 8.6.5
           executor: haskell/ghc-8_6_5
+
+      - haskell/build:
+          name: GHC 8.8.1
+          executor: haskell/ghc-8_8_1
 
       - github/release-cabal:
           name: GitHub Release
@@ -74,6 +78,7 @@ workflows:
             - GHC 8.2.2
             - GHC 8.4.4
             - GHC 8.6.5
+            - GHC 8.8.1
             - Darwin
           checkout: true
           attach-workspace: true

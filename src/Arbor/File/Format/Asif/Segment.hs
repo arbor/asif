@@ -73,7 +73,7 @@ extractSegmentByteStringsWithHeader bs header = do
     let segs = fmap (\(o, l) -> LBS.take (fromIntegral l) $ LBS.drop (fromIntegral o) bs) header
     forM_ (zip segs header) $ \(seg, (_, len)) ->
       when (LC8.length seg /= fromIntegral len) $
-        fail "XXX segments not read correctly"
+        Left "XXX segments not read correctly"
     return segs
 
 segmentNamed :: String -> M.Map Text (Z.Segment LC8.ByteString) -> Either String LC8.ByteString
