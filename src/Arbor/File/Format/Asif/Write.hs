@@ -1,6 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TupleSections         #-}
+
 -- |
 -- Module: Arbor.File.Format.Asif.Write
 --
@@ -73,14 +74,14 @@ import qualified Arbor.File.Format.Asif.Format     as F
 import qualified Data.ByteString                   as BS
 import qualified Data.ByteString.Builder           as BB
 import qualified Data.ByteString.Lazy              as LBS
+import qualified Data.Foldable                     as Foldable
+import qualified Data.Map.Strict                   as Map
 import qualified Data.Text                         as T
 import qualified Data.Text.Encoding                as T
 import qualified Data.Text.Lazy                    as TL
 import qualified Data.Text.Lazy.Encoding           as TE
 import qualified HaskellWorks.Data.Network.Ip.Ipv4 as IP4
 import qualified HaskellWorks.Data.Network.Ip.Ipv6 as IP6
-import qualified Data.Map.Strict                   as Map
-import qualified Data.Foldable                     as Foldable
 
 import qualified Data.Thyme.Clock.POSIX as TY
 import qualified Data.Thyme.Time.Core   as TY
