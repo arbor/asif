@@ -155,8 +155,6 @@ executable asif
                         App.Commands.Options.Type
                         App.Dump
                         App.IO
-                        Paths_asif
-  autogen-modules:      Paths_asif
   hs-source-dirs:       app
   default-extensions:   BangPatterns FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving MultiParamTypeClasses OverloadedStrings TupleSections
   ghc-options:          -threaded -rtsopts -O2
@@ -204,8 +202,6 @@ test-suite asif-test
                         Arbor.TestUtils
                         Gen.Feed
                         TestApp
-                        Paths_asif
-  autogen-modules:      Paths_asif
   hs-source-dirs:       test
   default-extensions:   BangPatterns FlexibleContexts FlexibleInstances GeneralizedNewtypeDeriving MultiParamTypeClasses OverloadedStrings TupleSections
   ghc-options:          -threaded -rtsopts -with-rtsopts=-N
