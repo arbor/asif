@@ -5,26 +5,23 @@ module Arbor.File.Format.Asif.Format.SegmentValueSpec
   ( spec
   ) where
 
-import           Arbor.File.Format.Asif.Data.Ip
-import           Arbor.File.Format.Asif.Format   as F
-import           Arbor.File.Format.Asif.Type
-import           Arbor.File.Format.Asif.Whatever
-import           Control.Lens
-import qualified Data.List                       as L
-import           Data.Semigroup                  ((<>))
-import           Data.Thyme.Time.Core
+import Arbor.File.Format.Asif.Data.Ip
+import Arbor.File.Format.Asif.Format   as F
+import Arbor.File.Format.Asif.Type
+import Arbor.File.Format.Asif.Whatever
+import Arbor.TestUtils
+import Control.Lens
+import Data.Semigroup                  ((<>))
+import Data.Thyme.Time.Core
+import HaskellWorks.Hspec.Hedgehog
+import Hedgehog
+import Test.Hspec
 
-import qualified Data.ByteString.Builder         as BB
-import qualified Data.ByteString.Lazy            as LBS
-import qualified Data.ByteString.Lazy.Char8      as LC8
-
-import           Arbor.TestUtils
-import           HaskellWorks.Hspec.Hedgehog
-import           Hedgehog
-import           Test.Hspec
-
-import qualified Hedgehog.Gen                    as Gen
-import qualified Hedgehog.Range                  as Range
+import qualified Data.ByteString.Builder    as BB
+import qualified Data.ByteString.Lazy       as LBS
+import qualified Data.ByteString.Lazy.Char8 as LC8
+import qualified Hedgehog.Gen               as Gen
+import qualified Hedgehog.Range             as Range
 
 {-# ANN module ("HLint: ignore Redundant do"  :: String) #-}
 
