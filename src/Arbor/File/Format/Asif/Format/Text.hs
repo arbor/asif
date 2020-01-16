@@ -1,20 +1,22 @@
-{-# LANGUAGE LambdaCase #-}
-module Arbor.File.Format.Asif.Format.Text
-( segmentValueToText
-)
-where
+{-# LANGUAGE LambdaCase        #-}
+{-# LANGUAGE OverloadedStrings #-}
 
-import qualified Arbor.File.Format.Asif.ByteString.Lazy     as LBS
-import           Arbor.File.Format.Asif.Data.Ip
-import           Arbor.File.Format.Asif.Format.SegmentValue
-import           Control.Lens
-import qualified Data.ByteString.Lazy                       as LBS
-import qualified Data.List                                  as L
-import           Data.Text                                  (Text)
-import qualified Data.Text                                  as T
-import qualified Data.Text.Encoding                         as T
-import           HaskellWorks.Data.Bits.BitShow             (bitShow)
-import           Numeric                                    (showHex)
+module Arbor.File.Format.Asif.Format.Text
+  ( segmentValueToText
+    ) where
+
+import Arbor.File.Format.Asif.Data.Ip
+import Arbor.File.Format.Asif.Format.SegmentValue
+import Control.Lens
+import Data.Text                                  (Text)
+import HaskellWorks.Data.Bits.BitShow             (bitShow)
+import Numeric                                    (showHex)
+
+import qualified Arbor.File.Format.Asif.ByteString.Lazy as LBS
+import qualified Data.ByteString.Lazy                   as LBS
+import qualified Data.List                              as L
+import qualified Data.Text                              as T
+import qualified Data.Text.Encoding                     as T
 
 segmentValueToText :: SegmentValue -> Text
 segmentValueToText = \case

@@ -1,5 +1,6 @@
-{-# LANGUAGE DataKinds        #-}
-{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE DataKinds         #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeApplications  #-}
 
 module Arbor.File.Format.Asif.Segment
   ( Z.Segment(..)
