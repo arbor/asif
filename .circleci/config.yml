@@ -108,7 +108,11 @@ workflows:
       - hackage/upload:
           publish: true
           requires:
-            - GitHub Release
+            - GHC 8.2.2
+            - GHC 8.4.4
+            - GHC 8.6.5
+            - GHC 8.8.1
+            # - GitHub Release
           filters:
             branches:
               only: master
