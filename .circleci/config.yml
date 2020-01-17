@@ -91,9 +91,10 @@ workflows:
             - GHC 8.4.4
             - GHC 8.6.5
             - GHC 8.8.1
+            # - Darwin
           checkout: true
           attach-workspace: true
-          source-env-file: ./build/project.env
+          # source-env-file: ./build/project.env
           soft: false
           before-release:
             - run:
